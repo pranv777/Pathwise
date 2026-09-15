@@ -1,6 +1,6 @@
 from __future__ import annotations
 import asyncio
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.models.schemas import (
     ChatRequest,
     ChatResponse,
@@ -20,22 +20,24 @@ router = APIRouter(prefix="/api", tags=["orchestrator"])
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
-    reply, steps = await asyncio.to_thread(
-        run_chat_orchestrator,
-        req.message,
-        req.profile,
-    )
+    try:
+        reply, steps = run_chat_orchestrator(req.message, req.profile)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Assistant failed: {exc}")
     return ChatResponse(reply=reply, steps=steps)
 
 
 @router.post("/workflow/run", response_model=WorkflowResponse)
 async def run_workflow(req: WorkflowRequest):
-    final_state = await asyncio.to_thread(
-        run_full_workflow,
-        req.profile,
-        req.job_query,
-        req.location or "",
-    )
+    try:
+        final_state = await asyncio.to_thread(
+            run_full_workflow,
+            req.profile,
+            req.job_query,
+            req.location or "",
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Workflow execution failed: {exc}")
 
     job = JobListing(**final_state["job"]) if final_state.get("job") else None
     match = JobMatchResponse(**final_state["match"]) if final_state.get("match") else None

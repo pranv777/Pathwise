@@ -14,11 +14,18 @@ async def upload_resume(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only PDF resumes are supported.")
 
     file_bytes = await file.read()
-    text = extract_text_from_pdf(file_bytes)
+    try:
+        text = extract_text_from_pdf(file_bytes)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not read this PDF: {exc}")
+
     if not text:
         raise HTTPException(status_code=422, detail="Could not extract text from this PDF.")
 
-    profile = run_resume_agent(text)
+    try:
+        profile = run_resume_agent(text)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Resume parsing failed: {exc}")    
 
     # Index the resume itself into the knowledge base so future RAG queries
     # (e.g. "what does my resume say about X") can retrieve it.

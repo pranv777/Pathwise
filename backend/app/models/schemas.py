@@ -103,6 +103,7 @@ class InterviewGenerateRequest(BaseModel):
 class InterviewQuestion(BaseModel):
     question: str
     category: str  # "technical" | "behavioral" | "system_design"
+    answer: str = ""
 
 
 class InterviewGenerateResponse(BaseModel):

@@ -26,7 +26,7 @@ from app.agents.job_matching_agent import run_job_matching_agent
 from app.agents.skill_gap_agent import run_skill_gap_agent
 from app.agents.learning_agent import run_learning_agent
 from app.agents.interview_agent import run_interview_generate
-from app.mcp_tools.mcp_client import call_job_search, call_github_analysis
+from app.mcp_tools.mcp_client import MCPToolError, call_job_search, call_github_analysis
 from app.rag.vector_store import search
 from app.utils.llm import get_llm, extract_json
 
@@ -36,9 +36,15 @@ from app.utils.llm import get_llm, extract_json
 # ---------------------------------------------------------------------------
 
 def _node_search_jobs(state: WorkflowState) -> WorkflowState:
-    result = asyncio.run(
-        call_job_search(state["job_query"], state.get("location", ""), limit=1)
-    )
+    from app.mcp_tools.mcp_client import MCPToolError
+    try:
+        result = asyncio.run(
+            call_job_search(state["job_query"], state.get("location", ""), limit=1)
+        )
+    except MCPToolError as exc:
+        log_step(state, "Orchestrator", "MCP tool call: search_jobs failed", str(exc))
+        return state
+
     jobs = result.get("jobs", [])
     if jobs:
         state["job"] = jobs[0]
@@ -201,7 +207,12 @@ def run_chat_orchestrator(message: str, profile: StudentProfile | None) -> tuple
 
     if route == "job_search":
         query = routed.get("job_query") or message
-        result = asyncio.run(call_job_search(query, limit=5))
+        try:
+            result = asyncio.run(call_job_search(query, limit=5))
+        except MCPToolError as exc:
+            steps.append(AgentStep(agent="Job Search (MCP)", action="Tool call failed", detail=str(exc)))
+            return f"I couldn't reach the job search tool right now: {exc}", steps
+        jobs = result.get("jobs", [])
         jobs = result.get("jobs", [])
         steps.append(
             AgentStep(
@@ -220,6 +231,11 @@ def run_chat_orchestrator(message: str, profile: StudentProfile | None) -> tuple
         username = routed.get("github_username", "").strip()
         if not username:
             return "Which GitHub username should I analyze?", steps
+        try:
+            result = asyncio.run(call_github_analysis(username))
+        except MCPToolError as exc:
+            steps.append(AgentStep(agent="GitHub Analysis (MCP)", action="Tool call failed", detail=str(exc)))
+            return f"I couldn't reach the GitHub analysis tool right now: {exc}", steps
         result = asyncio.run(call_github_analysis(username))
         steps.append(
             AgentStep(agent="GitHub Analysis (MCP)", action="Called analyze_github_profile tool", detail=username)

@@ -13,17 +13,27 @@ from app.utils.llm import get_llm, extract_json
 from app.rag.vector_store import search
 
 GENERATE_SYSTEM_PROMPT = """You are an Interview Agent for a college placement assistant.
-Generate role-specific interview questions. Respond with ONLY valid JSON (no markdown fences):
+Generate role-specific interview questions WITH strong model answers. Respond with ONLY
+valid JSON (no markdown fences):
 
 {
   "questions": [
-    {"question": "string", "category": "technical|behavioral|system_design"}
+    {
+      "question": "string",
+      "category": "technical|behavioral|system_design",
+      "answer": "a strong, concrete model answer a well-prepared candidate would give"
+    }
   ]
 }
 
-Mix categories realistically for the role (mostly technical for engineering roles, with
-2-3 behavioral questions). Ground technical questions in the retrieved reference material
-and, if provided, the candidate's own listed skills/projects where relevant.
+Rules:
+- Mix categories realistically for the role (mostly technical for engineering roles, with
+  2-3 behavioral questions).
+- Ground technical questions in the retrieved reference material and, if provided, the
+  candidate's own listed skills/projects where relevant.
+- Each "answer" should be genuinely useful: specific, structured, and long enough to
+  actually demonstrate a good answer (3-6 sentences for technical/system_design, or a
+  STAR-format answer for behavioral) — not a one-line summary.
 """
 
 EVALUATE_SYSTEM_PROMPT = """You are an Interview Agent evaluating a candidate's spoken/written
@@ -61,7 +71,7 @@ RETRIEVED INTERVIEW PREP MATERIAL:
     data = extract_json(response.content)
 
     questions = [
-        InterviewQuestion(question=q.get("question", ""), category=q.get("category", "technical"))
+        InterviewQuestion(question=q.get("question", ""), category=q.get("category", "technical"), answer=q.get("answer", ""),)
         for q in data.get("questions", []) or []
     ]
     return InterviewGenerateResponse(questions=questions[:num_questions] if num_questions else questions)

@@ -41,6 +41,14 @@ app.include_router(routes_rag.router)
 app.include_router(routes_github.router)
 
 
+@app.on_event("startup")
+async def check_config():
+    if not settings.google_api_key:
+        import logging
+        logging.getLogger("startup").warning(
+            "GOOGLE_API_KEY is not set — all agent endpoints will fail until it's configured in .env"
+        )
+
 @app.get("/")
 async def root():
     return {"status": "ok", "service": "placement-career-assistant-api"}

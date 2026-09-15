@@ -10,6 +10,7 @@ from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
 from app.config import settings
+import logging
 
 _store: Chroma | None = None
 COLLECTION_NAME = "placement_assistant_kb"
@@ -38,30 +39,31 @@ def get_store() -> Chroma:
 
 
 def add_document(text: str, source: str, doc_type: str, chunk_size: int = 1200, chunk_overlap: int = 150) -> int:
-    """Chunk and index a document. Returns number of chunks added."""
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=chunk_overlap
-    )
-    chunks = splitter.split_text(text)
-    if not chunks:
+    try:
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        chunks = splitter.split_text(text)
+        if not chunks:
+            return 0
+
+        docs = [Document(page_content=chunk, metadata={"source": source, "doc_type": doc_type}) for chunk in chunks]
+        ids = [str(uuid.uuid4()) for _ in docs]
+        store = get_store()
+        store.add_documents(docs, ids=ids)
+        return len(docs)
+    except Exception as exc:
+        logger.warning(f"RAG ingestion failed (source={source!r}): {exc}")
         return 0
 
-    docs = [
-        Document(
-            page_content=chunk,
-            metadata={"source": source, "doc_type": doc_type},
-        )
-        for chunk in chunks
-    ]
-    ids = [str(uuid.uuid4()) for _ in docs]
-    store = get_store()
-    store.add_documents(docs, ids=ids)
-    return len(docs)
 
+logger = logging.getLogger("rag")
 
 def search(query: str, k: int = 4, doc_type: str | None = None) -> list[tuple[Document, float]]:
-    store = get_store()
-    filter_ = {"doc_type": doc_type} if doc_type else None
-    return store.similarity_search_with_relevance_scores(query, k=k, filter=filter_)
+    try:
+        store = get_store()
+        filter_ = {"doc_type": doc_type} if doc_type else None
+        return store.similarity_search_with_relevance_scores(query, k=k, filter=filter_)
+    except Exception as exc:
+        logger.warning(f"RAG search failed (query={query!r}, doc_type={doc_type}): {exc}")
+        return [] 
