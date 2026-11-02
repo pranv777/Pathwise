@@ -1,157 +1,160 @@
 # Wayfind — Placement & Career Assistant
 
-An agentic AI assistant for college placements: upload a resume, search jobs,
-get a match score, find skill gaps, get a learning roadmap, and practice
-interviews — all driven by six cooperating agents, a RAG knowledge base, and
-real MCP tool servers.
 
-## Architecture
+An AI assistant that helps college students prepare for placements. Upload a
+resume, find jobs and campus drives, see how well you match, learn what skills
+you're missing, and practise for the interview. It is built from cooperating
+AI agents, a retrieval (RAG) knowledge base and real MCP tool servers.
+
+## Features
+
+- **Resume analysis** — upload a PDF, DOCX or TXT resume; skills, education,
+  projects and experience are extracted into an editable, saved profile.
+- **Job search** — live web search (or a built-in fallback list) with an
+  internship / full-time filter.
+- **Match score and skill gaps** — a 0–100 match against any job, with matched
+  and missing skills ranked by priority.
+- **Learning roadmap** — a study plan for your missing skills, grounded in a
+  curated knowledge base so it recommends real resources.
+- **Interview prep** — role-specific questions with model answers.
+- **Application tracker** — save jobs and move them through Saved, Applied,
+  Interview, Offer and Rejected, with notes.
+- **Placement calendar** — upcoming campus drives filtered by branch, CGPA,
+  type and location, with eligibility checks and calendar export (.ics).
+- **GitHub profile card** — turns your public repos into skill evidence.
+- **AI chat assistant** — free-form questions routed to the right agent or tool.
+- **Privacy controls** — Google sign-in, per-user data, and a one-click
+  "Delete my data".
+
+## How it works
 
 ```
-placement-assistant/
-├── backend/                  FastAPI + LangGraph + LangChain + Chroma
-│   ├── app/
-│   │   ├── agents/           6 agents + LangGraph orchestrator graph
-│   │   │   ├── resume_agent.py
-│   │   │   ├── job_matching_agent.py
-│   │   │   ├── skill_gap_agent.py
-│   │   │   ├── learning_agent.py
-│   │   │   ├── interview_agent.py
-│   │   │   ├── orchestrator.py   ← LangGraph pipeline + chat intent router
-│   │   │   └── state.py
-│   │   ├── rag/               Chroma vector store + ingestion
-│   │   ├── mcp_tools/         Real MCP servers (stdio) + client wrapper
-│   │   │   ├── job_search_server.py   ← MCP tool: search_jobs
-│   │   │   ├── github_server.py       ← MCP tool: analyze_github_profile
-│   │   │   └── mcp_client.py          ← spawns the servers, calls tools
-│   │   ├── api/                FastAPI routes, one file per resource
-│   │   ├── models/schemas.py   Shared Pydantic models
-│   │   ├── utils/               PDF parsing, LLM client, JSON extraction
-│   │   ├── config.py
-│   │   └── main.py
-│   ├── data/knowledge_base/    Seed RAG documents + local job fallback
-│   ├── requirements.txt
-│   └── .env.example
-└── frontend/                  React + Vite + Tailwind CSS
-    └── src/
-        ├── components/         Sidebar, ResumeUpload,
-        │                       JobSearch, MatchScore, LearningRoadmap,
-        │                       InterviewPrep, Overview
-        ├── api/client.js        Axios client for every backend endpoint
-        └── App.jsx
+React (Vite)  ──►  FastAPI  ──►  Agents (LangGraph / LangChain + Gemini)
+                      │                │
+                      │                ├──►  RAG: Chroma vector store
+                      │                └──►  MCP tools: job search, GitHub
+                      └──►  PostgreSQL (users, history, saved jobs)
 ```
 
-### Why this is genuinely agentic (not one LLM call)
+- **Six agents:** resume, job matching, skill gap, learning, interview and an
+  orchestrator. The orchestrator's LLM router decides which agent or tool a
+  chat message needs.
+- **MCP tools:** `search_jobs` and `analyze_github_profile` run as separate
+  MCP servers over stdio. Agents call them through the MCP client, never
+  directly.
+- **RAG:** job matching, the roadmap and interview questions retrieve
+  curated documents before generating, so answers are grounded.
 
-- **Orchestrator Agent** (`agents/orchestrator.py`) does two things:
-  1. Runs a **LangGraph** `StateGraph` for the full pipeline
-     (`search_jobs → match → skill_gap → learning → interview`), where each
-     node is a separate agent function and state is threaded and logged
-     between them.
-  2. For free-form chat, an LLM **router** reads the user's message and
-     decides which single agent or MCP tool actually applies
-     (`job_search`, `github_analysis`, `skill_gap`, `learning`,
-     `interview`, or a RAG-grounded answer) — this is a real routing
-     decision, not a keyword `if/else`.
-- **MCP tools are real MCP servers.** `job_search_server.py` and
-  `github_server.py` are built with `FastMCP`, run as separate stdio
-  subprocesses, and are called through the official `mcp` client SDK
-  (`mcp_client.py`). Agents never call the GitHub API or search API
-  directly — they go through the MCP tool boundary.
-- **RAG is used for retrieval before generation**, not appended as an
-  afterthought: Job Matching pulls similar job-description context to
-  calibrate scoring; Learning Recommendation retrieves real curated
-  resources before asking the LLM to organize them into a roadmap (so it
-  isn't inventing course names); Interview generation retrieves
-  interview-prep material for the specific role family first.
+## Tech stack
 
-## Prerequisites
+| Layer | Tools |
+|---|---|
+| Frontend | React 18, Vite, Tailwind CSS, Vitest, Playwright |
+| Backend | FastAPI, Pydantic, LangGraph, LangChain, Google Gemini |
+| Data | PostgreSQL (SQLite for quick local runs), SQLAlchemy, Alembic, Chroma |
+| Tools | MCP (FastMCP), Tavily web search, GitHub API |
+| Auth | Google Sign-In, JWT in an HTTP-only cookie |
+| Deploy | Vercel (frontend), Render (backend), Neon (database) |
 
-- Python 3.12+
-- Node.js 18+
-- A free **Google Gemini API key**: https://aistudio.google.com/apikey
+## Getting started
 
-Optional (the app works without these, with graceful fallbacks):
-- **Tavily API key** (https://tavily.com) — enables live web job search.
-  Without it, the job-search MCP tool uses a curated local listings file
-  (`backend/data/knowledge_base/sample_jobs.json`).
-- **GitHub token** — raises the GitHub API rate limit from 60 to 5000
-  req/hr. Public profile analysis works fine unauthenticated at low volume.
+**Requirements:** Python 3.12, Node.js 22, and a free
+[Gemini API key](https://aistudio.google.com/apikey). For sign-in you also
+need a Google OAuth *Web application* client ID, with `http://localhost:5173`
+added as an authorized JavaScript origin. Tavily and GitHub keys are optional.
 
-## Backend setup
+### Run locally
 
 ```bash
+# Backend (Windows: venv\Scripts\activate)
 cd backend
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
-
-cp .env.example .env
-# then edit .env and set GOOGLE_API_KEY=... (required)
-# TAVILY_API_KEY and GITHUB_TOKEN are optional
-
-# Seed the RAG knowledge base (career guides, interview prep, learning resources)
-python -m app.rag.ingest
-
-# Run the API
-uvicorn app.main:app --reload --port 8000
+python -m venv venv && source venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env              # set GOOGLE_API_KEY, GOOGLE_CLIENT_ID, JWT_SECRET_KEY
+alembic upgrade head              # create the database tables
+python -m app.rag.ingest          # load the knowledge base (once)
+uvicorn app.main:app --reload --port 8000   # Windows: python run.py
 ```
-
-The API is now live at `http://localhost:8000`. Interactive docs at
-`http://localhost:8000/docs`. Check `GET /api/health` to confirm your keys
-are picked up.
-
-## Frontend setup
 
 ```bash
+# Frontend (in another terminal)
 cd frontend
+echo "VITE_GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com" > .env
 npm install
-npm run dev
+npm run dev                       # http://localhost:5173
 ```
 
-The dashboard is now live at `http://localhost:5173` (proxies `/api` to
-`http://localhost:8000`, configured in `vite.config.js`).
+API docs are at `http://localhost:8000/docs`.
 
-## Using it
+### Run with Docker
 
-1. **Resume & Profile** — upload a PDF resume. The Resume Agent extracts
-   skills, education, projects, and experience, and the resume text is
-   indexed into the RAG knowledge base.
-2. **Job Search** — search for roles. Routed through the `search_jobs` MCP
-   tool (live web search via Tavily, or the local fallback listings).
-   Select a job to analyze it.
-3. **Match & Skill Gap** — runs the Job Matching Agent (0–100 score,
-   matched/missing skills) and the Skill Gap Agent (priority-ordered gaps).
-4. **Learning Roadmap** — the Learning Recommendation Agent turns your
-   prioritized skill gaps into a roadmap grounded in the RAG knowledge
-   base.
-5. **Interview Prep** — the Interview Agent generates role-specific
-   questions and scores your typed answers with concrete feedback.
-6. **Overview** — "Run full workflow" chains all of the above from a single
-   job-role query; the chat box routes free-form questions through the
-   Orchestrator (try "find me ML internships" or "analyze github user
-   torvalds").
+Put `VITE_GOOGLE_CLIENT_ID=...` in a `.env` file next to `docker-compose.yml`
+and your keys in `backend/.env`, then:
 
-Watch the **Agent Activity** panel on the right at any time — it's a live
-trace of which agent acted, what it did, and (for MCP calls) which tool
-was actually invoked.
+```bash
+docker compose up --build         # app at http://localhost:8080
+```
 
-## Extending it
+Add `http://localhost:8080` to the Google authorized origins for this mode.
 
-- **Add an MCP tool**: create a new `FastMCP` server under `mcp_tools/`,
-  add a client function in `mcp_client.py`, and call it from an agent or
-  from the orchestrator's router.
-- **Add a document type to RAG**: call `add_document(text, source,
-  doc_type)` from `rag/vector_store.py` — the interview, learning, and
-  matching agents already filter retrieval by `doc_type`.
-- **Calendar/task integration** (optional per the original spec): add a
-  third MCP server following the same `FastMCP` + stdio pattern as
-  `job_search_server.py`, then wire it into the orchestrator's router.
+## Configuration
 
-## Notes on Gemini models
+Set these in `backend/.env` (see `.env.example` for the full list):
 
-`.env.example` defaults to `gemini-3.8-flash` for chat and
-`models/gemini-embedding-001` for embeddings — both fast and inexpensive.
-Swap `GEMINI_MODEL` for a stronger model if you want higher-quality
-extraction/reasoning at higher latency/cost.
+| Variable | Purpose |
+|---|---|
+| `GOOGLE_API_KEY` | Gemini key (required) |
+| `GOOGLE_CLIENT_ID` | Google sign-in client ID (required) |
+| `JWT_SECRET_KEY` | Random 32+ character secret |
+| `DATABASE_URL` | PostgreSQL URL (defaults to local SQLite) |
+| `CORS_ORIGINS` | Frontend URL(s), no localhost in production |
+| `TAVILY_API_KEY`, `GITHUB_TOKEN` | Optional: live job search, higher GitHub limits |
+
+The frontend needs `VITE_GOOGLE_CLIENT_ID`.
+
+## Testing and quality
+
+```bash
+cd backend  && ruff check . && mypy app && pytest -q
+cd frontend && npm run check      # lint, format, typecheck, tests, build
+cd frontend && npm run e2e        # Playwright end-to-end tests
+```
+
+GitHub Actions runs all of these, plus migration checks and Docker builds, on
+every pull request.
+
+## Deployment
+
+The repo is set up for free-tier hosting: **Neon** for PostgreSQL, **Render**
+for the backend (`render.yaml`, which runs migrations on start) and **Vercel**
+for the frontend (`frontend/vercel.json` forwards `/api` to Render). Set
+`CORS_ORIGINS` on Render to your Vercel URL and add that URL to your Google
+OAuth origins. Note that Render's free tier sleeps when idle, so the first
+request can take about a minute; the app shows a banner while it wakes up.
+
+## Project structure
+
+```
+backend/
+  app/agents/       resume, matching, skill gap, learning, interview, orchestrator
+  app/api/          FastAPI routes, one file per resource
+  app/mcp_tools/    MCP servers (job search, GitHub) and the client
+  app/rag/          Chroma vector store and ingestion
+  app/auth/         Google sign-in, JWT, database models
+  alembic/          database migrations
+  data/knowledge_base/   seed documents, sample jobs, campus drives
+  tests/
+frontend/
+  src/components/   one component per screen
+  src/api/client.js API client
+  e2e/              Playwright tests
+```
+
+## Extending
+
+- **Add a tool:** create a `FastMCP` server in `mcp_tools/`, add a client
+  function in `mcp_client.py`, and call it from an agent or the orchestrator.
+- **Add knowledge:** call `add_document(text, source, doc_type)` from
+  `rag/vector_store.py`.
+- **Add campus drives:** edit `backend/data/knowledge_base/campus_drives.json`
+  (the bundled entries are samples).

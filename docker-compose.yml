@@ -5,7 +5,7 @@ services:
       POSTGRES_USER: wayfind
       POSTGRES_PASSWORD: wayfind
       POSTGRES_DB: wayfind
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5433:5432"] # local-only; change the left side if 5432 is taken
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wayfind"]
@@ -15,25 +15,42 @@ services:
 
   backend:
     build: ./backend
-    env_file: ./backend/.env
+    env_file:
+      - path: ./backend/.env
+        required: false # Gemini/Tavily/GitHub keys and the Google client ID come from here
     environment:
+      # These override anything in backend/.env (e.g. its SQLite DATABASE_URL).
       ENVIRONMENT: development
       DATABASE_URL: postgresql+psycopg://wayfind:wayfind@db:5432/wayfind
       CHROMA_PERSIST_DIR: /app/data/chroma
       CORS_ORIGINS: http://localhost:8080
-      SEED_ON_STARTUP: "true"
+      SEED_ON_STARTUP: "true" # only seeds when the chroma volume is empty
     depends_on:
       db:
         condition: service_healthy
     volumes: [chroma:/app/data/chroma]
     ports: ["8000:8000"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=4)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s # migrations and imports can be slow on first start
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
-    depends_on: [backend]
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:?Set VITE_GOOGLE_CLIENT_ID in a .env file next to docker-compose.yml}
+    depends_on:
+      backend:
+        condition: service_healthy
     ports: ["8080:80"]
 
 volumes:
