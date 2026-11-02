@@ -5,15 +5,20 @@ set GITHUB_TOKEN in .env for higher limits.
 
 Run standalone for debugging:  python -m app.mcp_tools.github_server
 """
+
 import json
+import re
 from collections import Counter
+
 import httpx
 from mcp.server.fastmcp import FastMCP
+
 from app.config import settings
 
 mcp = FastMCP("github-analysis")
 
 API_BASE = "https://api.github.com"
+_USERNAME_RE = re.compile(r"^[A-Za-z0-9-]{1,39}$")
 
 
 def _headers() -> dict:
@@ -28,6 +33,9 @@ def analyze_github_profile(username: str) -> str:
     """Fetch a GitHub user's public repositories and summarize their
     top languages and most notable (highest-starred) repos. Returns JSON
     with username, public_repos, top_languages, notable_repos, summary."""
+    username = username.strip()
+    if not _USERNAME_RE.fullmatch(username):
+        return json.dumps({"error": f"'{username}' is not a valid GitHub username"})
     try:
         with httpx.Client(timeout=15.0, headers=_headers()) as client:
             user_resp = client.get(f"{API_BASE}/users/{username}")
@@ -70,7 +78,9 @@ def analyze_github_profile(username: str) -> str:
         return json.dumps(result)
     except httpx.HTTPStatusError as exc:
         return json.dumps(
-            {"error": f"GitHub API error {exc.response.status_code} for user '{username}'"}
+            {
+                "error": f"GitHub API error {exc.response.status_code} for user '{username}'"
+            }
         )
     except Exception as exc:  # noqa: BLE001
         return json.dumps({"error": str(exc)})

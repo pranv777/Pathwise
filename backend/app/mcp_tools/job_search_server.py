@@ -6,10 +6,14 @@ end-to-end without any paid keys.
 
 Run standalone for debugging:  python -m app.mcp_tools.job_search_server
 """
+
+import hashlib
 import json
 from pathlib import Path
+
 import httpx
 from mcp.server.fastmcp import FastMCP
+
 from app.config import settings
 
 mcp = FastMCP("job-search")
@@ -40,6 +44,12 @@ def _search_local(query: str, location: str | None, limit: int) -> list[dict]:
     return results
 
 
+def _stable_id(url: str) -> str:
+    """Deterministic across processes (built-in hash() is salted per run), so
+    history de-duplication keeps working for the same web listing."""
+    return hashlib.sha1(url.encode("utf-8")).hexdigest()[:10]
+
+
 def _search_tavily(query: str, location: str | None, limit: int) -> list[dict]:
     full_query = f"{query} job openings"
     if location:
@@ -58,15 +68,16 @@ def _search_tavily(query: str, location: str | None, limit: int) -> list[dict]:
     resp.raise_for_status()
     data = resp.json()
     jobs = []
-    for i, item in enumerate(data.get("results", [])[:limit]):
+    for item in data.get("results", [])[:limit]:
+        url = item.get("url", "")
         jobs.append(
             {
-                "id": f"web-{i}-{hash(item['url']) & 0xffff}",
+                "id": f"web-{_stable_id(url)}",
                 "title": item.get("title", query),
                 "company": "See listing",
                 "location": location or "",
                 "description": item.get("content", "")[:1000],
-                "url": item.get("url", ""),
+                "url": url,
                 "source": "web",
             }
         )

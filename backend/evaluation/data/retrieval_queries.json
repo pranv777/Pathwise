@@ -1,0 +1,15 @@
+[
+  {"query": "how should I format my resume bullet points", "expected_sources": ["career_guide_resume_writing"]},
+  {"query": "track applications and get referrals", "expected_sources": ["career_guide_applying_strategy"]},
+  {"query": "which DSA topics are asked in coding interviews", "doc_type": "interview_prep", "expected_sources": ["interview_prep_dsa"]},
+  {"query": "system design question for a fresher", "doc_type": "interview_prep", "expected_sources": ["interview_prep_system_design_entry_level"]},
+  {"query": "STAR method behavioral answers", "doc_type": "interview_prep", "expected_sources": ["interview_prep_behavioral"]},
+  {"query": "tell me about yourself HR round", "doc_type": "interview_prep", "expected_sources": ["interview_prep_hr_common_questions"]},
+  {"query": "resources to practice data structures and algorithms", "doc_type": "learning_resource", "expected_sources": ["learning_resource_dsa"]},
+  {"query": "learn React and FastAPI for full stack", "doc_type": "learning_resource", "expected_sources": ["learning_resource_web_dev"]},
+  {"query": "system design study plan", "doc_type": "learning_resource", "expected_sources": ["learning_resource_system_design"]},
+  {"query": "Docker AWS CI/CD fundamentals", "doc_type": "learning_resource", "expected_sources": ["learning_resource_cloud_devops"]},
+  {"query": "LangChain transformers machine learning course", "doc_type": "learning_resource", "expected_sources": ["learning_resource_ml_ai"]},
+  {"query": "Software Engineer Intern requirements", "doc_type": "job_description", "expected_sources": ["job_description_template_sde_intern"]},
+  {"query": "React Node entry level full stack requirements", "doc_type": "job_description", "expected_sources": ["job_description_template_fullstack"]}
+]

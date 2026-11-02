@@ -1,6 +1,9 @@
 """Extract raw text from an uploaded resume PDF using PyPDF."""
+
 from __future__ import annotations
+
 from io import BytesIO
+
 from pypdf import PdfReader
 
 

@@ -4,7 +4,9 @@ Every node reads what it needs off this state and writes its result back
 onto it, plus appends a human-readable trace entry to `steps` so the
 frontend's Agent Activity panel can show what happened and why.
 """
+
 from __future__ import annotations
+
 from typing import Any, TypedDict
 
 

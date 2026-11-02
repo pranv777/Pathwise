@@ -1,0 +1,37 @@
+# Local environment and credentials (never commit real secrets)
+.env
+.env.*
+!.env.example
+!**/.env.example
+/Google_OAuth_Client.json
+client_secret*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+
+# Test output
+frontend/playwright-report/
+frontend/test-results/
+coverage/
+
+# Generated application data
+/backend/data/chroma/
+/backend/data/uploads/
+/backend/data/*.db
+/backend/data/*.sqlite3
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -34,7 +34,7 @@ placement-assistant/
 │   └── .env.example
 └── frontend/                  React + Vite + Tailwind CSS
     └── src/
-        ├── components/         Sidebar, AgentActivityPanel, ResumeUpload,
+        ├── components/         Sidebar, ResumeUpload,
         │                       JobSearch, MatchScore, LearningRoadmap,
         │                       InterviewPrep, Overview
         ├── api/client.js        Axios client for every backend endpoint
@@ -67,7 +67,7 @@ placement-assistant/
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.12+
 - Node.js 18+
 - A free **Google Gemini API key**: https://aistudio.google.com/apikey
 
@@ -137,10 +137,21 @@ Watch the **Agent Activity** panel on the right at any time — it's a live
 trace of which agent acted, what it did, and (for MCP calls) which tool
 was actually invoked.
 
+## Extending it
+
+- **Add an MCP tool**: create a new `FastMCP` server under `mcp_tools/`,
+  add a client function in `mcp_client.py`, and call it from an agent or
+  from the orchestrator's router.
+- **Add a document type to RAG**: call `add_document(text, source,
+  doc_type)` from `rag/vector_store.py` — the interview, learning, and
+  matching agents already filter retrieval by `doc_type`.
+- **Calendar/task integration** (optional per the original spec): add a
+  third MCP server following the same `FastMCP` + stdio pattern as
+  `job_search_server.py`, then wire it into the orchestrator's router.
 
 ## Notes on Gemini models
 
-`.env.example` defaults to `gemini-2.5-flash` for chat and
+`.env.example` defaults to `gemini-3.8-flash` for chat and
 `models/gemini-embedding-001` for embeddings — both fast and inexpensive.
 Swap `GEMINI_MODEL` for a stronger model if you want higher-quality
 extraction/reasoning at higher latency/cost.

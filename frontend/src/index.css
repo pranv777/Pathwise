@@ -10,7 +10,7 @@
     @apply bg-cobalt-light text-cobalt-dark;
   }
   :focus-visible {
-    outline: 2px solid #2451B8;
+    outline: 2px solid #2451b8;
     outline-offset: 2px;
   }
 }
@@ -33,11 +33,53 @@
   .status-dot {
     @apply inline-block w-2 h-2 rounded-full;
   }
+  .chip {
+    @apply inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full;
+  }
+  .skeleton {
+    @apply bg-hairline/70 rounded-md animate-pulse;
+  }
+  .chat-bubble-user {
+    @apply bg-ink text-white text-sm leading-relaxed rounded-2xl rounded-br-md px-4 py-2.5 max-w-[80%] ml-auto;
+  }
+  .chat-bubble-assistant {
+    @apply bg-paper text-ink text-sm leading-relaxed rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[80%];
+  }
+  .markdown-body p {
+    @apply mb-2 last:mb-0;
+  }
+  .markdown-body ul {
+    @apply list-disc pl-5 mb-2 space-y-1;
+  }
+  .markdown-body ol {
+    @apply list-decimal pl-5 mb-2 space-y-1;
+  }
+  .markdown-body strong {
+    @apply font-semibold;
+  }
+  .markdown-body code {
+    @apply font-mono text-xs bg-black/5 px-1 py-0.5 rounded;
+  }
+  .markdown-body pre {
+    @apply bg-black/5 rounded-md p-3 overflow-x-auto mb-2 text-xs font-mono;
+  }
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3 {
+    @apply font-display font-semibold mt-3 mb-1.5;
+  }
+  .markdown-body a {
+    @apply text-cobalt underline;
+  }
 }
 
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(36, 81, 184, 0.35); }
-  100% { box-shadow: 0 0 0 8px rgba(36, 81, 184, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(36, 81, 184, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(36, 81, 184, 0);
+  }
 }
 .status-dot--active {
   animation: pulse-ring 1.4s ease-out infinite;

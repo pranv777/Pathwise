@@ -1,4 +1,5 @@
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { PanelSkeleton } from './Skeleton.jsx'
 
 function ScoreRing({ score }) {
   const radius = 46
@@ -10,26 +11,47 @@ function ScoreRing({ score }) {
     <svg width="120" height="120" viewBox="0 0 120 120">
       <circle cx="60" cy="60" r={radius} fill="none" stroke="#E3E5E0" strokeWidth="10" />
       <circle
-        cx="60" cy="60" r={radius} fill="none" stroke={color} strokeWidth="10"
-        strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+        cx="60"
+        cy="60"
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth="10"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
         transform="rotate(-90 60 60)"
       />
-      <text x="60" y="66" textAnchor="middle" fontSize="26" fontWeight="600" fontFamily="Space Grotesk" fill="#161A1F">
+      <text
+        x="60"
+        y="66"
+        textAnchor="middle"
+        fontSize="26"
+        fontWeight="600"
+        fontFamily="Space Grotesk"
+        fill="#161A1F"
+      >
         {score}
       </text>
     </svg>
   )
 }
 
-export default function MatchScore({ job, match, skillGap, loading, onAnalyze }) {
+export default function MatchScore({
+  job,
+  match = null,
+  skillGap = null,
+  loading = false,
+  onAnalyze,
+}) {
   if (!job) {
     return (
       <div className="space-y-6">
         <div>
           <h2 className="font-display text-xl font-semibold">Match &amp; Skill Gap</h2>
           <p className="text-sm text-muted mt-1">
-            Select a job from Job Search first — the Job Matching and Skill Gap agents need a
-            target role to compare your profile against.
+            Select a job from Job Search first — the Job Matching and Skill Gap agents need a target
+            role to compare your profile against.
           </p>
         </div>
       </div>
@@ -51,6 +73,12 @@ export default function MatchScore({ job, match, skillGap, loading, onAnalyze })
         </button>
       </div>
 
+      {loading && !match && (
+        <PanelSkeleton
+          lines={4}
+          note="Comparing your profile with this job. This can take up to 30 seconds."
+        />
+      )}
       {match && (
         <div className="panel p-6 flex items-center gap-8">
           <ScoreRing score={match.match_score} />
@@ -69,11 +97,16 @@ export default function MatchScore({ job, match, skillGap, loading, onAnalyze })
             </p>
             <div className="flex flex-wrap gap-1.5">
               {match.matched_skills.map((s, i) => (
-                <span key={i} className="text-xs font-mono px-2 py-1 rounded bg-signal-green/10 text-signal-green border border-signal-green/20">
+                <span
+                  key={i}
+                  className="text-xs font-mono px-2 py-1 rounded bg-signal-green/10 text-signal-green border border-signal-green/20"
+                >
                   {s}
                 </span>
               ))}
-              {match.matched_skills.length === 0 && <p className="text-xs text-muted">None found</p>}
+              {match.matched_skills.length === 0 && (
+                <p className="text-xs text-muted">None found</p>
+              )}
             </div>
           </div>
           <div className="panel p-5">
@@ -82,11 +115,16 @@ export default function MatchScore({ job, match, skillGap, loading, onAnalyze })
             </p>
             <div className="flex flex-wrap gap-1.5">
               {match.missing_skills.map((s, i) => (
-                <span key={i} className="text-xs font-mono px-2 py-1 rounded bg-signal-red/10 text-signal-red border border-signal-red/20">
+                <span
+                  key={i}
+                  className="text-xs font-mono px-2 py-1 rounded bg-signal-red/10 text-signal-red border border-signal-red/20"
+                >
                   {s}
                 </span>
               ))}
-              {match.missing_skills.length === 0 && <p className="text-xs text-muted">None — great fit</p>}
+              {match.missing_skills.length === 0 && (
+                <p className="text-xs text-muted">None — great fit</p>
+              )}
             </div>
           </div>
         </div>
@@ -102,8 +140,10 @@ export default function MatchScore({ job, match, skillGap, loading, onAnalyze })
                 <span className="text-xs font-mono text-muted w-5">{i + 1}</span>
                 <div className="flex-1 h-2 rounded-full bg-paper overflow-hidden">
                   <div
-                    className="h-full bg-cobalt-DEFAULT rounded-full"
-                    style={{ width: `${100 - i * (80 / Math.max(skillGap.priority_order.length, 1))}%` }}
+                    className="h-full bg-cobalt rounded-full"
+                    style={{
+                      width: `${100 - i * (80 / Math.max(skillGap.priority_order.length, 1))}%`,
+                    }}
                   />
                 </div>
                 <span className="text-sm w-40 shrink-0">{skill}</span>

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "backend_py",
+    "text": "ARJUN MEHTA | arjun@example.com\nEducation: B.Tech Computer Science, PES University, 2026\nSkills: Python, FastAPI, PostgreSQL, SQL, Git, Docker, pytest, REST APIs\nProjects:\n- URL shortener with FastAPI and PostgreSQL, 50k redirects/day load-tested\n- Expense tracker REST API with JWT auth and pytest coverage of 85%\nExperience: Backend Intern at Finlytics, built reporting endpoints in FastAPI and tuned SQL indexes",
+    "expected_skills": ["Python", "FastAPI", "PostgreSQL", "SQL", "Git", "Docker", "pytest", "REST APIs"],
+    "projects": ["URL shortener with FastAPI and PostgreSQL", "Expense tracker REST API with JWT auth and pytest"],
+    "experience": ["Backend Intern at Finlytics: reporting endpoints in FastAPI, SQL index tuning"]
+  },
+  {
+    "id": "fullstack_react",
+    "text": "NEHA RAO | neha@example.com\nEducation: B.E. Information Science, RVCE, 2025\nSkills: React, TypeScript, Node.js, MongoDB, Express, GitHub Actions, Docker, Git, REST APIs\nProjects:\n- Kanban board in React and TypeScript with Node/Express and MongoDB\n- Portfolio CMS deployed with GitHub Actions CI/CD\nExperience: Frontend Intern at Pixelcraft, shipped React dashboards",
+    "expected_skills": ["React", "TypeScript", "Node.js", "MongoDB", "Express", "GitHub Actions", "Docker", "Git", "REST APIs"],
+    "projects": ["Kanban board in React/TypeScript with Node/Express and MongoDB", "Portfolio CMS with GitHub Actions CI/CD"],
+    "experience": ["Frontend Intern at Pixelcraft: shipped React dashboards"]
+  },
+  {
+    "id": "ml_student",
+    "text": "KARTHIK S | karthik@example.com\nEducation: B.Tech AI & ML, BMSCE, 2026\nSkills: Python, LangChain, ChromaDB, FastAPI, PyTorch, Hugging Face, Git\nProjects:\n- RAG chatbot over university PDFs using LangChain and ChromaDB\n- Fine-tuned DistilBERT for sentiment classification with Hugging Face\nExperience: ML Research Intern at IISc lab, built evaluation scripts in PyTorch",
+    "expected_skills": ["Python", "LangChain", "ChromaDB", "FastAPI", "PyTorch", "Hugging Face", "Git"],
+    "projects": ["RAG chatbot over university PDFs with LangChain and ChromaDB", "Fine-tuned DistilBERT for sentiment classification"],
+    "experience": ["ML Research Intern at IISc lab: PyTorch evaluation scripts"]
+  },
+  {
+    "id": "security_student",
+    "text": "SANA KHAN | sana@example.com\nEducation: B.Tech CSE (Cybersecurity), Christ University, 2026\nSkills: Nmap, Burp Suite, Wireshark, Python, Bash, TCP/IP, OWASP Top 10, Linux\nProjects:\n- Automated port-scan reporting tool in Python wrapping Nmap\n- Found and documented SQL injection and XSS in a deliberately vulnerable app using Burp Suite\nExperience: Security Intern at NetShield, triaged IDS alerts and wrote incident notes",
+    "expected_skills": ["Nmap", "Burp Suite", "Wireshark", "Python", "Bash", "TCP/IP", "OWASP Top 10", "Linux"],
+    "projects": ["Python tool wrapping Nmap for port-scan reports", "SQL injection and XSS findings with Burp Suite"],
+    "experience": ["Security Intern at NetShield: IDS alert triage, incident notes"]
+  }
+]

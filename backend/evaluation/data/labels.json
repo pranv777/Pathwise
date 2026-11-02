@@ -1,0 +1,16 @@
+{
+  "backend_py:local-1": "high",
+  "backend_py:local-2": "medium",
+  "backend_py:local-3": "medium",
+  "backend_py:local-4": "high",
+  "backend_py:local-5": "low",
+  "fullstack_react:local-1": "medium",
+  "fullstack_react:local-2": "high",
+  "fullstack_react:local-3": "low",
+  "fullstack_react:local-4": "low",
+  "ml_student:local-3": "high",
+  "ml_student:local-1": "medium",
+  "ml_student:local-5": "low",
+  "security_student:local-5": "high",
+  "security_student:local-3": "low"
+}
