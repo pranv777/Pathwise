@@ -77,8 +77,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-        env:
-          VITE_GOOGLE_CLIENT_ID: ci-placeholder
+
 
   e2e:
     runs-on: ubuntu-latest
@@ -106,4 +105,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build ./backend
-      - run: docker build --build-arg VITE_GOOGLE_CLIENT_ID=ci ./frontend
+      - run: docker build ./frontend

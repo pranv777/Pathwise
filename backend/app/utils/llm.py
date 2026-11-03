@@ -1,4 +1,4 @@
-"""Single place to construct the Gemini chat model used by every agent."""
+"""Single place to construct the chat model used by every agent."""
 
 from __future__ import annotations
 
@@ -7,27 +7,52 @@ import re
 from typing import Any
 
 import json_repair
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import SecretStr
 
 from app.config import settings
 
-_llms: dict[float, ChatGoogleGenerativeAI] = {}
+_llms: dict[float, BaseChatModel] = {}
 
 
-def get_llm(temperature: float = 0.3) -> ChatGoogleGenerativeAI:
-    """Lazily construct one Gemini chat model per temperature."""
-    if temperature not in _llms:
-        if not settings.google_api_key:
+def _build_llm(temperature: float) -> BaseChatModel:
+    if settings.llm_provider == "groq":
+        if not settings.groq_api_key:
             raise RuntimeError(
-                "GOOGLE_API_KEY is not set. Add it to backend/.env (see .env.example)."
+                "GROQ_API_KEY is not set. Add it to backend/.env (see .env.example)."
             )
-        _llms[temperature] = ChatGoogleGenerativeAI(
-            model=settings.gemini_model,
-            api_key=SecretStr(settings.google_api_key),
+        from langchain_groq import ChatGroq
+
+        return ChatGroq(
+            model=settings.groq_model,
+            api_key=SecretStr(settings.groq_api_key),
             temperature=temperature,
+            timeout=settings.llm_timeout_seconds,
+            max_retries=1,
+            # gpt-oss "thinks" first; those tokens count against Groq's per-minute cap.
+            model_kwargs={"reasoning_effort": settings.groq_reasoning_effort},
         )
+
+    if not settings.google_api_key:
+        raise RuntimeError(
+            "GOOGLE_API_KEY is not set. Add it to backend/.env (see .env.example)."
+        )
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    return ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        api_key=SecretStr(settings.google_api_key),
+        temperature=temperature,
+        timeout=settings.llm_timeout_seconds,
+        max_retries=1,
+    )
+
+
+def get_llm(temperature: float = 0.3) -> BaseChatModel:
+    """Lazily construct one chat model per temperature."""
+    if temperature not in _llms:
+        _llms[temperature] = _build_llm(temperature)
     return _llms[temperature]
 
 

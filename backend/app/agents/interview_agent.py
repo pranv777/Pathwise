@@ -62,7 +62,7 @@ Be constructive but honest — do not inflate scores for vague or incomplete ans
 def run_interview_generate(
     role: str, profile: StudentProfile | None, num_questions: int = 5
 ) -> InterviewGenerateResponse:
-    docs = search(f"{role} interview questions", k=4, doc_type="interview_prep")
+    docs = search(f"{role} interview questions", k=3, doc_type="interview_prep")
     retrieved_text = "\n---\n".join(d.page_content for d, _ in docs)
 
     profile_line = (

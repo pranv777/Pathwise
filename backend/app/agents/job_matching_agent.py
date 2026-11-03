@@ -32,7 +32,7 @@ covers a FastAPI requirement) but do not inflate the score past what the evidenc
 def run_job_matching_agent(
     profile: StudentProfile, job: JobListing
 ) -> JobMatchResponse:
-    context_docs = search(job.description, k=3, doc_type="job_description")
+    context_docs = search(job.description, k=2, doc_type="job_description")
     context_text = "\n---\n".join(d.page_content for d, _ in context_docs)
 
     user_content = f"""STUDENT SKILLS: {", ".join(profile.skills) or "none listed"}

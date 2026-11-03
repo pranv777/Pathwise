@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.8-flash"
     gemini_embedding_model: str = "models/gemini-embedding-001"
 
+    # --- Chat model used by the agents ---
+    llm_provider: Literal["groq", "gemini"] = "groq"
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_reasoning_effort: Literal["low", "medium", "high"] = "low"
+    llm_timeout_seconds: int = 40
+
     github_token: str = ""
     tavily_api_key: str = ""
 
@@ -27,10 +34,13 @@ class Settings(BaseSettings):
 
     # --- LLM output handling ---
     llm_output_mode: Literal["structured", "legacy"] = "structured"
-    llm_max_attempts: int = 3
+    llm_max_attempts: int = 2
 
     # --- Auth ---
-    google_client_id: str = ""
+    otp_expire_minutes: int = 10
+    resend_api_key: str = ""
+    mail_from: str = "Wayfind <onboarding@resend.dev>"
+    mail_from_name: str = "Wayfind"
     jwt_secret_key: str = "change-me-in-.env"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
@@ -44,6 +54,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def llm_model_name(self) -> str:
+        return self.groq_model if self.llm_provider == "groq" else self.gemini_model
 
     @field_validator("database_url")
     @classmethod
@@ -61,8 +75,10 @@ class Settings(BaseSettings):
         problems: list[str] = []
         if not self.google_api_key:
             problems.append("GOOGLE_API_KEY is required")
-        if not self.google_client_id:
-            problems.append("GOOGLE_CLIENT_ID is required")
+        if self.llm_provider == "groq" and not self.groq_api_key:
+            problems.append("GROQ_API_KEY is required when LLM_PROVIDER=groq")
+        if not self.resend_api_key:
+            problems.append("RESEND_API_KEY is required (OTP emails)")
         if self.jwt_secret_key == "change-me-in-.env" or len(self.jwt_secret_key) < 32:
             problems.append("JWT_SECRET_KEY must be a random string of 32+ characters")
         if self.database_url.startswith("sqlite"):

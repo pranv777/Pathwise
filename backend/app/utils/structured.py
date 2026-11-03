@@ -1,6 +1,6 @@
 """One entry point for validated LLM output, with retries and failure metrics.
 
-Mode "structured": Gemini function-calling via with_structured_output() + Pydantic.
+Mode "structured": function-calling via with_structured_output() + Pydantic.
 Mode "legacy":     the old regex + json_repair path (kept only as an eval baseline).
 """
 

@@ -191,19 +191,19 @@ def main() -> int:
     ap.add_argument("--k", type=int, default=3)
     args = ap.parse_args()
 
-    if not settings.google_api_key:
-        print("GOOGLE_API_KEY is required for the eval harness.")
+    if settings.llm_provider == "groq" and not settings.groq_api_key:
+        print("GROQ_API_KEY is required for the eval harness.")
         return 1
 
     _use_temp_store()
     report: dict[str, Any] = {
         "timestamp": datetime.now(UTC).isoformat(),
-        "model": settings.gemini_model,
+        "model": settings.llm_model_name,
         "repeats": args.repeats,
     }
     md = [
         f"# Eval run {report['timestamp']}\n",
-        f"Model: `{settings.gemini_model}`, repeats: {args.repeats}\n",
+        f"Model: `{settings.llm_model_name}`, repeats: {args.repeats}\n",
     ]
 
     if args.only in ("all", "retrieval"):

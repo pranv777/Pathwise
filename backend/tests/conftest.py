@@ -45,10 +45,9 @@ def test_user(db_session):
 
     unique = uuid.uuid4().hex[:8]
     user = User(
-        google_id=f"test-{unique}",
         email=f"test-{unique}@example.com",
+        password_hash=None,
         name="Test User",
-        picture=None,
     )
     db_session.add(user)
     db_session.commit()
@@ -91,10 +90,9 @@ def other_user(db_session):
 
     unique = uuid.uuid4().hex[:8]
     user = User(
-        google_id=f"other-{unique}",
         email=f"other-{unique}@example.com",
+        password_hash=None,
         name="Other User",
-        picture=None,
     )
     db_session.add(user)
     db_session.commit()

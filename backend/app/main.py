@@ -36,8 +36,12 @@ logger = logging.getLogger("startup")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    if settings.llm_provider == "groq" and not settings.groq_api_key:
+        logger.warning("GROQ_API_KEY is not set: agent endpoints will fail.")
     if not settings.google_api_key:
-        logger.warning("GOOGLE_API_KEY is not set: agent endpoints will fail.")
+        logger.warning(
+            "GOOGLE_API_KEY is not set: resume indexing and RAG search will fail."
+        )
     elif settings.seed_on_startup:
         try:
             logger.info("KB seed: %s", await asyncio.to_thread(seed_if_empty))
@@ -96,4 +100,5 @@ async def health():
         "gemini_configured": bool(settings.google_api_key),
         "tavily_configured": bool(settings.tavily_api_key),
         "github_token_configured": bool(settings.github_token),
+        "llm_provider": settings.llm_provider,
     }

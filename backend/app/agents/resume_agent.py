@@ -35,7 +35,7 @@ Rules:
 def run_resume_agent(resume_text: str) -> StudentProfile:
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"RESUME TEXT:\n\n{resume_text[:12000]}"),
+        HumanMessage(content=f"RESUME TEXT:\n\n{resume_text[:6000]}"),
     ]
     data = invoke_json(ResumeOut, messages, temperature=0.1)
     return StudentProfile(
