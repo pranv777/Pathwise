@@ -57,9 +57,7 @@ export default function Overview({
       <div>
         <p className="eyebrow">Dashboard</p>
         <h1 className="font-display text-2xl font-semibold mt-1">
-          {profile?.name
-            ? `Welcome back, ${profile.name.split(' ')[0]}`
-            : 'Placement & Career Assistant'}
+          {profile?.name ? `Welcome back, ${profile.name.split(' ')[0]}` : 'Pathwise'}
         </h1>
         <p className="text-sm text-muted mt-2 max-w-xl leading-relaxed">
           Upload your resume, then search for a role from the sidebar to get a match score, skill

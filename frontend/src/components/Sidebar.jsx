@@ -65,7 +65,7 @@ export default function Sidebar({ active, onChange, user, onLogout, ready = {} }
           <div className="w-7 h-7 rounded-md bg-ink flex items-center justify-center">
             <span className="text-white font-display font-semibold text-sm">W</span>
           </div>
-          <span className="font-display font-semibold text-[15px] tracking-tight">Wayfind</span>
+          <span className="font-display font-semibold text-[15px] tracking-tight">Pathwise</span>
         </div>
         <p className="eyebrow mt-2">Placement &amp; Career Assistant</p>
       </div>

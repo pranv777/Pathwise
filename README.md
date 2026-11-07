@@ -1,4 +1,4 @@
-# Wayfind — Placement & Career Assistant
+# Pathwise
 
 ![CI](https://github.com/pranavh-57/Placement-and-Career-Assistant/actions/workflows/ci.yml/badge.svg)
 
@@ -125,7 +125,7 @@ Set these in `backend/.env` (see `.env.example` for the full list):
 **Email sending:** without a verified domain, Resend only allows the sender
 `onboarding@resend.dev` and only delivers to your own Resend account email.
 To email any user, verify a domain at resend.com/domains and set
-`MAIL_FROM="Wayfind <noreply@yourdomain.com>"`.
+`MAIL_FROM="Pathwise <noreply@yourdomain.com>"`.
 
 **Free-tier limits:** Groq's free plan allows about 30 requests a minute and
 8,000 tokens a minute for `gpt-oss-120b`. The app keeps prompts small and

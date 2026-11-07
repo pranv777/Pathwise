@@ -99,12 +99,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper px-4">
       <div className="panel p-8 w-full max-w-sm space-y-6 text-center">
+        <a href="#/" className="block text-left text-xs text-muted hover:text-ink">
+          ← Back to home
+        </a>
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-md bg-ink flex items-center justify-center">
             <span className="text-white font-display font-semibold">W</span>
           </div>
           <div>
-            <h1 className="font-display text-xl font-semibold">Wayfind</h1>
+            <h1 className="font-display text-xl font-semibold">Pathwise</h1>
             <p className="text-sm text-muted mt-1">
               {mode === 'login' && 'Sign in to continue to your placement dashboard.'}
               {mode === 'signup' && 'Create your account.'}

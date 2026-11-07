@@ -11,9 +11,9 @@ export function downloadDriveIcs(drive) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Wayfind//Placement Calendar//EN',
+    'PRODID:-//Pathwise//Placement Calendar//EN',
     'BEGIN:VEVENT',
-    `UID:${drive.id}@wayfind`,
+    `UID:${drive.id}@pathwise`,
     `DTSTAMP:${stamp}Z`,
     `DTSTART;VALUE=DATE:${ymd(start)}`,
     `DTEND;VALUE=DATE:${ymd(end)}`,

@@ -2,13 +2,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: wayfind
-      POSTGRES_PASSWORD: wayfind
-      POSTGRES_DB: wayfind
+      POSTGRES_USER: pathwise
+      POSTGRES_PASSWORD: pathwise
+      POSTGRES_DB: pathwise
     ports: ["127.0.0.1:5433:5432"] # local-only; change the left side if 5432 is taken
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wayfind"]
+      test: ["CMD-SHELL", "pg_isready -U pathwise"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -21,7 +21,7 @@ services:
     environment:
       # These override anything in backend/.env (e.g. its SQLite DATABASE_URL).
       ENVIRONMENT: development
-      DATABASE_URL: postgresql+psycopg://wayfind:wayfind@db:5432/wayfind
+      DATABASE_URL: postgresql+psycopg://pathwise:pathwise@db:5432/pathwise
       CHROMA_PERSIST_DIR: /app/data/chroma
       CORS_ORIGINS: http://localhost:8080
       SEED_ON_STARTUP: "true" # only seeds when the chroma volume is empty

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: wayfind-api
+    name: pathwise-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend

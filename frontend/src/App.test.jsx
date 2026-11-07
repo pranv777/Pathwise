@@ -22,6 +22,7 @@ vi.mock('./context/useAuth.js', () => ({ useAuth: vi.fn() }))
 vi.mock('./components/LoginPage.jsx', () => ({ default: () => <div>login page</div> }))
 vi.mock('./components/ResumeUpload.jsx', () => ({ default: () => <div>resume upload</div> }))
 vi.mock('./components/GitHubCard.jsx', () => ({ default: () => <div>github card</div> }))
+vi.mock('./components/Landing.jsx', () => ({ default: () => <div>landing page</div> }))
 
 const mockUseAuth = /** @type {any} */ (useAuth)
 const user = { id: 1, name: 'Asha Rao', email: 'asha@example.com' }
@@ -58,6 +59,7 @@ describe('App', () => {
   })
 
   it('shows the login page when signed out', () => {
+    window.location.hash = '#/signin'
     mockUseAuth.mockReturnValue({ user: null, loading: false, logout: vi.fn() })
     render(<App />)
     expect(screen.getByText('login page')).toBeInTheDocument()
@@ -67,9 +69,7 @@ describe('App', () => {
     const logout = vi.fn()
     signedIn(logout)
     render(<App />)
-    expect(
-      screen.getByRole('heading', { name: 'Placement & Career Assistant' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Pathwise' })).toBeInTheDocument()
     expect(screen.getByText('Asha Rao')).toBeInTheDocument()
     await userEvent.click(screen.getByTitle('Log out'))
     expect(logout).toHaveBeenCalledTimes(1)
@@ -151,9 +151,7 @@ describe('App', () => {
     await u.click(screen.getByRole('button', { name: /yes, delete everything/i }))
 
     expect(apiMock.deleteMyData).toHaveBeenCalledTimes(1)
-    expect(
-      await screen.findByRole('heading', { name: 'Placement & Career Assistant' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Pathwise' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Job Search' })).toBeDisabled()
   })
 })

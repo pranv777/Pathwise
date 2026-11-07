@@ -51,7 +51,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Placement & Career Assistant API",
+    title="Pathwise API",
     description="Agentic AI backend: Resume, Job Matching, Skill Gap, "
     "Learning, Interview and Orchestrator agents, backed by RAG + MCP.",
     version="1.0.0",

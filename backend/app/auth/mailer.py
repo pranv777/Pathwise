@@ -20,10 +20,10 @@ def send_otp_email(to_email: str, name: str, otp: str) -> None:
         json={
             "from": settings.mail_from,
             "to": [to_email],
-            "subject": f"{otp} is your Wayfind verification code",
+            "subject": f"{otp} is your Pathwise verification code",
             "html": (
                 f"<p>Hi {name},</p>"
-                "<p>Your Wayfind verification code is:</p>"
+                "<p>Your Pathwise verification code is:</p>"
                 f"<p style='font-size:28px;letter-spacing:6px'><b>{otp}</b></p>"
                 f"<p>It expires in {settings.otp_expire_minutes} minutes. "
                 "If you didn't request it, you can ignore this email.</p>"

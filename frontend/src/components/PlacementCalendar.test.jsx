@@ -96,13 +96,13 @@ describe('PlacementCalendar', () => {
       cgpa: '7.8',
       location: 'Pune',
     })
-    const saved = JSON.parse(localStorage.getItem('wayfind:campus-prefs'))
+    const saved = JSON.parse(localStorage.getItem('pathwise:campus-prefs'))
     expect(saved).toMatchObject({ jobType: 'internship', branch: 'CSE', cgpa: '7.8' })
   })
 
   it('restores saved filters on load', async () => {
     localStorage.setItem(
-      'wayfind:campus-prefs',
+      'pathwise:campus-prefs',
       JSON.stringify({ jobType: 'full-time', branch: 'IT', cgpa: '8' }),
     )
     renderCal()
@@ -116,7 +116,7 @@ describe('PlacementCalendar', () => {
   })
 
   it('survives corrupt saved filters', async () => {
-    localStorage.setItem('wayfind:campus-prefs', '{not json')
+    localStorage.setItem('pathwise:campus-prefs', '{not json')
     renderCal()
     expect(await screen.findByText('SDE Intern')).toBeInTheDocument()
   })
@@ -128,14 +128,14 @@ describe('PlacementCalendar', () => {
   })
 
   it('shows eligibility and the reasons when a branch is set', async () => {
-    localStorage.setItem('wayfind:campus-prefs', JSON.stringify({ branch: 'CSE' }))
+    localStorage.setItem('pathwise:campus-prefs', JSON.stringify({ branch: 'CSE' }))
     renderCal()
     expect(await screen.findByText("You're eligible")).toBeInTheDocument()
     expect(screen.getByText('Needs CGPA 8.5+')).toBeInTheDocument()
   })
 
   it('can hide drives the student is not eligible for', async () => {
-    localStorage.setItem('wayfind:campus-prefs', JSON.stringify({ branch: 'CSE' }))
+    localStorage.setItem('pathwise:campus-prefs', JSON.stringify({ branch: 'CSE' }))
     renderCal()
     await screen.findByText('Analyst')
     await userEvent.click(screen.getByLabelText(/hide drives i'm not eligible for/i))
