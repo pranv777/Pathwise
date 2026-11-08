@@ -39,8 +39,8 @@ class Settings(BaseSettings):
     # --- Auth ---
     otp_expire_minutes: int = 10
     resend_api_key: str = ""
-    mail_from: str = "Wayfind <onboarding@resend.dev>"
-    mail_from_name: str = "Wayfind"
+    mail_from: str = "Pathwise <onboarding@resend.dev>"
+    mail_from_name: str = "Pathwise"
     jwt_secret_key: str = "change-me-in-.env"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440

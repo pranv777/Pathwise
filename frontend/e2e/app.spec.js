@@ -94,8 +94,8 @@ async function mockApi(page, { authed = true } = {}) {
 test.describe('authentication', () => {
   test('logged-out users see the sign-in form', async ({ page }) => {
     await mockApi(page, { authed: false })
-    await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Wayfind' })).toBeVisible()
+    page.goto('/#/signin')
+    await expect(page.getByRole('heading', { name: 'Pathwise' })).toBeVisible()
     await expect(page.getByText(/sign in to continue/i)).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
     await expect(page.getByLabel('Password', { exact: true })).toBeVisible()
@@ -103,19 +103,19 @@ test.describe('authentication', () => {
 
   test('signs in with email and password', async ({ page }) => {
     await mockApi(page, { authed: false })
-    await page.goto('/')
+    page.goto('/#/signin')
 
     await page.getByLabel('Email').fill('demo@example.com')
     await page.getByLabel('Password', { exact: true }).fill('correct-password')
     await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 
-    await expect(page.getByRole('heading', { name: 'Placement & Career Assistant' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Pathwise' })).toBeVisible()
     await expect(page.getByText('Demo User')).toBeVisible()
   })
 
   test('shows an error for a wrong password', async ({ page }) => {
     await mockApi(page, { authed: false })
-    await page.goto('/')
+    page.goto('/#/signin')
 
     await page.getByLabel('Email').fill('demo@example.com')
     await page.getByLabel('Password', { exact: true }).fill('wrong-password')
@@ -127,7 +127,7 @@ test.describe('authentication', () => {
 
   test('creates an account only after the emailed code is verified', async ({ page }) => {
     await mockApi(page, { authed: false })
-    await page.goto('/')
+    page.goto('/#/signin')
 
     await page.getByRole('button', { name: 'Create one' }).click()
     await page.getByLabel('Name').fill('Demo User')
@@ -146,12 +146,12 @@ test.describe('authentication', () => {
 
     await page.getByLabel('Verification code').fill(OTP)
     await page.getByRole('button', { name: 'Verify and create account' }).click()
-    await expect(page.getByRole('heading', { name: 'Placement & Career Assistant' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Pathwise' })).toBeVisible()
   })
 
   test('validates the sign-up form before contacting the server', async ({ page }) => {
     await mockApi(page, { authed: false })
-    await page.goto('/')
+    page.goto('/#/signin')
 
     await page.getByRole('button', { name: 'Create one' }).click()
     await page.getByLabel('Name').fill('Demo User')
@@ -168,6 +168,14 @@ test.describe('authentication', () => {
     await mockApi(page)
     await page.goto('/')
     await page.getByTitle('Log out').click()
+    await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible()
+  })
+
+  test('logged-out users land on the homepage and can reach sign in', async ({ page }) => {
+    await mockApi(page, { authed: false })
+    await page.goto('/')
+    await expect(page.getByRole('link', { name: 'Documentation' }).first()).toBeVisible()
+    await page.getByRole('link', { name: 'Sign in' }).first().click()
     await expect(page.getByText(/sign in to continue/i)).toBeVisible()
   })
 })

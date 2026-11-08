@@ -109,11 +109,11 @@ describe('slow-request detection', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     events = []
-    window.addEventListener('wayfind:slow', listener)
+    window.addEventListener('pathwise:slow', listener)
   })
 
   afterEach(() => {
-    window.removeEventListener('wayfind:slow', listener)
+    window.removeEventListener('pathwise:slow', listener)
     vi.unstubAllGlobals()
     vi.useRealTimers()
   })

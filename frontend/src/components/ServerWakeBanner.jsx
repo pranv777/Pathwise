@@ -19,10 +19,10 @@ export default function ServerWakeBanner() {
         setWarming(false)
       })
     const onSlow = (e) => setSlowCalls(Boolean(e.detail))
-    window.addEventListener('wayfind:slow', onSlow)
+    window.addEventListener('pathwise:slow', onSlow)
     return () => {
       clearTimeout(timer)
-      window.removeEventListener('wayfind:slow', onSlow)
+      window.removeEventListener('pathwise:slow', onSlow)
     }
   }, [])
 

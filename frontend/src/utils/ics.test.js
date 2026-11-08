@@ -47,7 +47,7 @@ describe('downloadDriveIcs', () => {
     expect(blobs[0].type).toBe('text/calendar')
     expect(lines[0]).toBe('BEGIN:VCALENDAR')
     expect(lines.at(-1)).toBe('END:VCALENDAR')
-    expect(lines).toContain('UID:d1@wayfind')
+    expect(lines).toContain('UID:d1@pathwise')
     expect(lines).toContain('DTSTART;VALUE=DATE:20261120')
     expect(lines).toContain('DTEND;VALUE=DATE:20261121')
     expect(lines).toContain('SUMMARY:Kestrel Systems - SDE Intern')

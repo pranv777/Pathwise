@@ -57,7 +57,7 @@ def _use_temp_store() -> None:
     vector_store._store = Chroma(
         collection_name="eval_kb",
         embedding_function=vector_store.get_embeddings(),
-        persist_directory=tempfile.mkdtemp(prefix="wayfind_eval_"),
+        persist_directory=tempfile.mkdtemp(prefix="pathwise_eval_"),
     )
     ingest_seed_kb()
 

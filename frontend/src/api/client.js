@@ -12,7 +12,7 @@ const client = axios.create({
 // Tell the UI when any request has been pending for a while (cold start banner).
 let slowCount = 0
 const notifySlow = () =>
-  window.dispatchEvent(new CustomEvent('wayfind:slow', { detail: slowCount > 0 }))
+  window.dispatchEvent(new CustomEvent('pathwise:slow', { detail: slowCount > 0 }))
 
 const pending = new WeakMap() // request config -> { timer, slow }
 

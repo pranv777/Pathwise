@@ -12,11 +12,23 @@ import NextStep from './components/NextStep.jsx'
 import SavedJobs from './components/SavedJobs.jsx'
 import PlacementCalendar from './components/PlacementCalendar.jsx'
 import ServerWakeBanner from './components/ServerWakeBanner.jsx'
+import Landing from './components/Landing.jsx'
 import api from './api/client.js'
 import { friendlyError } from './utils/errors.js'
 
+function useHash() {
+  const [hash, setHash] = useState(() => window.location.hash)
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', onChange)
+    return () => window.removeEventListener('hashchange', onChange)
+  }, [])
+  return hash
+}
+
 export default function App() {
   const { user, loading, logout } = useAuth()
+  const hash = useHash()
 
   let content
   if (loading) {
@@ -24,9 +36,8 @@ export default function App() {
       <div className="h-screen flex items-center justify-center text-sm text-muted">Loading…</div>
     )
   } else if (!user) {
-    content = <LoginPage />
+    content = hash === '#/signin' ? <LoginPage /> : <Landing />
   } else {
-    // key={user.id}: a different user gets a brand-new Dashboard, so no state leaks across accounts.
     content = <Dashboard key={user.id} user={user} onLogout={logout} />
   }
 

@@ -36,18 +36,18 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: wayfind
-          POSTGRES_PASSWORD: wayfind
-          POSTGRES_DB: wayfind
+          POSTGRES_USER: pathwise
+          POSTGRES_PASSWORD: pathwise
+          POSTGRES_DB: pathwise
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U wayfind"
+          --health-cmd "pg_isready -U pathwise"
           --health-interval 5s --health-timeout 5s --health-retries 10
     defaults:
       run:
         working-directory: backend
     env:
-      DATABASE_URL: postgresql+psycopg://wayfind:wayfind@localhost:5432/wayfind
+      DATABASE_URL: postgresql+psycopg://pathwise:pathwise@localhost:5432/pathwise
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

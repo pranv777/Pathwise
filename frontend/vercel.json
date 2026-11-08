@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://wayfind-api.onrender.com/api/:path*"
+      "destination": "https://pathwise-api.onrender.com/api/:path*"
     }
   ]
 }

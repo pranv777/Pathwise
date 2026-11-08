@@ -5,7 +5,7 @@ import { friendlyError } from '../utils/errors.js'
 import { downloadDriveIcs, driveToJob } from '../utils/ics.js'
 
 const BRANCHES = ['CSE', 'IT', 'ECE', 'EEE', 'ME', 'CE', 'AI&DS']
-const PREFS_KEY = 'wayfind:campus-prefs'
+const PREFS_KEY = 'pathwise:campus-prefs'
 const DEFAULTS = { jobType: 'any', branch: '', cgpa: '', location: '', includePast: false }
 
 function loadPrefs() {
