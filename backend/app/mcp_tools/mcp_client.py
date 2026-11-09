@@ -15,6 +15,10 @@ from contextlib import asynccontextmanager
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.types import TextContent
+
+
+from app.admin.tracking import track_mcp
 
 
 class MCPToolError(Exception):
@@ -51,6 +55,12 @@ async def _session(params: StdioServerParameters):
         yield session
 
 
+def _first_text(result) -> str:
+    block = result.content[0] if result.content else None
+    return block.text if isinstance(block, TextContent) else "{}"
+
+
+@track_mcp("search_jobs")
 async def call_job_search(query: str, location: str = "", limit: int = 5) -> dict:
     try:
         async with asyncio.timeout(20):
@@ -59,7 +69,7 @@ async def call_job_search(query: str, location: str = "", limit: int = 5) -> dic
                     "search_jobs",
                     {"query": query, "location": location, "limit": limit},
                 )
-                text = result.content[0].text if result.content else "{}"
+                text = _first_text(result)
                 return json.loads(text)
     except TimeoutError:
         raise MCPToolError("Job search tool timed out after 20s.")
@@ -71,6 +81,7 @@ async def call_job_search(query: str, location: str = "", limit: int = 5) -> dic
         raise MCPToolError(f"Job search tool failed: {exc}") from exc
 
 
+@track_mcp("analyze_github_profile")
 async def call_github_analysis(username: str) -> dict:
     try:
         async with asyncio.timeout(15):
@@ -78,7 +89,7 @@ async def call_github_analysis(username: str) -> dict:
                 result = await session.call_tool(
                     "analyze_github_profile", {"username": username}
                 )
-                text = result.content[0].text if result.content else "{}"
+                text = _first_text(result)
                 return json.loads(text)
     except TimeoutError:
         raise MCPToolError("GitHub analysis tool timed out after 15s.")

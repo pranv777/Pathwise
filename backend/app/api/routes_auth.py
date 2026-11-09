@@ -62,6 +62,7 @@ class UserOut(BaseModel):
     id: int
     email: str
     name: str
+    is_admin: bool = False
 
 
 class LoginResponse(BaseModel):
@@ -187,6 +188,7 @@ def verify_otp(
         user = User(email=email, name=row.name, password_hash=row.password_hash)
         db.add(user)
     db.delete(row)
+    user.last_login_at = datetime.now(UTC)
     db.commit()
     db.refresh(user)
 
@@ -208,6 +210,12 @@ def login(
     password_ok = verify_password(req.password, stored)
     if not (user and user.password_hash and password_ok):
         raise HTTPException(401, "Incorrect email or password.")
+    if user.status != "active":
+        raise HTTPException(
+            403, "This account is not active. Contact your placement cell."
+        )
+    user.last_login_at = datetime.now(UTC)
+    db.commit()
 
     _set_session_cookie(response, user)
     return LoginResponse(user=UserOut.model_validate(user))

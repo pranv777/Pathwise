@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.admin.tracking import track_agent
 from app.models.llm_outputs import ResumeOut
 from app.models.schemas import Education, StudentProfile
 from app.utils.structured import invoke_json
@@ -32,6 +33,7 @@ Rules:
 """
 
 
+@track_agent("resume")
 def run_resume_agent(resume_text: str) -> StudentProfile:
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),

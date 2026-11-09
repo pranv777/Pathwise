@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.admin.tracking import track_agent
 from app.models.llm_outputs import EvaluationOut, InterviewSetOut
 from app.models.schemas import (
     InterviewEvaluateResponse,
@@ -59,6 +60,7 @@ Be constructive but honest — do not inflate scores for vague or incomplete ans
 """
 
 
+@track_agent("interview")
 def run_interview_generate(
     role: str, profile: StudentProfile | None, num_questions: int = 5
 ) -> InterviewGenerateResponse:
@@ -97,6 +99,7 @@ RETRIEVED INTERVIEW PREP MATERIAL:
     )
 
 
+@track_agent("interview")
 def run_interview_evaluate(
     question: str, answer: str, role: str = ""
 ) -> InterviewEvaluateResponse:

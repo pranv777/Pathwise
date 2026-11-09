@@ -8,6 +8,7 @@ import {
   LogOut,
   ClipboardList,
   CalendarDays,
+  Shield,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -96,6 +97,16 @@ export default function Sidebar({ active, onChange, user, onLogout, ready = {} }
           )
         })}
       </nav>
+
+      {user.is_admin && (
+        <a
+          href="#/admin"
+          className="mx-3 mb-3 flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-muted hover:bg-paper hover:text-ink"
+        >
+          <Shield size={16} strokeWidth={2} />
+          Admin dashboard
+        </a>
+      )}
 
       <div className="px-4 py-4 border-t border-hairline flex items-center gap-2.5">
         <Avatar user={user} />

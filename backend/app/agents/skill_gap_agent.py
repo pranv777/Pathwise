@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.admin.tracking import track_agent
 from app.models.llm_outputs import SkillGapOut
 from app.models.schemas import JobListing, SkillGapResponse, StudentProfile
 from app.utils.structured import invoke_json
@@ -27,6 +28,7 @@ highest-impact/most-frequently-required first to nice-to-have last.
 """
 
 
+@track_agent("skill_gap")
 def run_skill_gap_agent(profile: StudentProfile, job: JobListing) -> SkillGapResponse:
     user_content = f"""STUDENT SKILLS: {", ".join(profile.skills) or "none listed"}
 JOB TITLE: {job.title}

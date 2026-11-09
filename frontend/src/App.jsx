@@ -13,6 +13,7 @@ import SavedJobs from './components/SavedJobs.jsx'
 import PlacementCalendar from './components/PlacementCalendar.jsx'
 import ServerWakeBanner from './components/ServerWakeBanner.jsx'
 import Landing from './components/Landing.jsx'
+import AdminApp from './admin/AdminApp.jsx'
 import api from './api/client.js'
 import { friendlyError } from './utils/errors.js'
 
@@ -37,6 +38,18 @@ export default function App() {
     )
   } else if (!user) {
     content = hash === '#/signin' ? <LoginPage /> : <Landing />
+  } else if (hash.startsWith('#/admin')) {
+    // The UI gate is cosmetic; every /api/admin route enforces is_admin server-side.
+    content = user.is_admin ? (
+      <AdminApp />
+    ) : (
+      <div className="h-screen flex flex-col items-center justify-center gap-2 text-sm text-muted">
+        <p>You don&apos;t have access to the admin dashboard.</p>
+        <a className="text-cobalt underline" href="#/">
+          Back to Pathwise
+        </a>
+      </div>
+    )
   } else {
     content = <Dashboard key={user.id} user={user} onLogout={logout} />
   }

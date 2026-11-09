@@ -10,6 +10,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from app.admin.routes import router as admin_router
 from app.api import (
     routes_account,
     routes_auth,
@@ -82,6 +83,7 @@ app.include_router(routes_profile.router, dependencies=protected)
 app.include_router(routes_account.router, dependencies=protected)
 app.include_router(routes_saved_jobs.router, dependencies=protected)
 app.include_router(routes_campus.router, dependencies=protected)
+app.include_router(admin_router, dependencies=protected)  # also gated by require_admin
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]

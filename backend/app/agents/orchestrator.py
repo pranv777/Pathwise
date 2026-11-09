@@ -16,6 +16,7 @@ Two responsibilities:
 """
 
 from __future__ import annotations
+from typing import cast
 
 import asyncio
 import json
@@ -23,6 +24,7 @@ import json
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 
+from app.admin.tracking import track_agent
 from app.agents.interview_agent import run_interview_generate
 from app.agents.job_matching_agent import run_job_matching_agent
 from app.agents.learning_agent import run_learning_agent
@@ -44,7 +46,7 @@ from app.utils.structured import invoke_json
 async def _node_search_jobs(state: WorkflowState) -> WorkflowState:
     try:
         result = await call_job_search(
-            state["job_query"], state.get("location", ""), limit=1
+            state.get("job_query", ""), state.get("location", ""), limit=1
         )
     except MCPToolError as exc:
         log_step(state, "Orchestrator", "MCP tool call: search_jobs failed", str(exc))
@@ -67,8 +69,8 @@ async def _node_search_jobs(state: WorkflowState) -> WorkflowState:
 def _node_match(state: WorkflowState) -> WorkflowState:
     if not state.get("job"):
         return state
-    profile = StudentProfile(**state["profile"])
-    job = JobListing(**state["job"])
+    profile = StudentProfile(**state.get("profile", {}))
+    job = JobListing(**state.get("job", {}))
     match = run_job_matching_agent(profile, job)
     state["match"] = match.model_dump()
     log_step(
@@ -83,8 +85,8 @@ def _node_match(state: WorkflowState) -> WorkflowState:
 def _node_skill_gap(state: WorkflowState) -> WorkflowState:
     if not state.get("job"):
         return state
-    profile = StudentProfile(**state["profile"])
-    job = JobListing(**state["job"])
+    profile = StudentProfile(**state.get("profile", {}))
+    job = JobListing(**state.get("job", {}))
     gap = run_skill_gap_agent(profile, job)
     state["skill_gap"] = gap.model_dump()
     log_step(
@@ -114,8 +116,8 @@ def _node_learning(state: WorkflowState) -> WorkflowState:
 def _node_interview(state: WorkflowState) -> WorkflowState:
     if not state.get("job"):
         return state
-    profile = StudentProfile(**state["profile"])
-    job = JobListing(**state["job"])
+    profile = StudentProfile(**state.get("profile", {}))
+    job = JobListing(**state.get("job", {}))
     result = run_interview_generate(job.title, profile, num_questions=5)
     state["interview_questions"] = [q.model_dump() for q in result.questions]
     log_step(
@@ -155,6 +157,7 @@ def build_workflow_graph():
     return _workflow_graph
 
 
+@track_agent("orchestrator")
 async def run_full_workflow(
     profile: StudentProfile, job_query: str, location: str = ""
 ) -> WorkflowState:
@@ -168,7 +171,7 @@ async def run_full_workflow(
     log_step(
         initial_state, "Orchestrator", "Starting full workflow", f"Query: {job_query!r}"
     )
-    return await app_graph.ainvoke(initial_state)
+    return cast(WorkflowState, await app_graph.ainvoke(initial_state))
 
 
 # ---------------------------------------------------------------------------
@@ -384,6 +387,7 @@ async def _route_and_run(
     return await _rag_answer(message, user_id, history), steps
 
 
+@track_agent("orchestrator")
 async def run_chat_orchestrator(
     message: str,
     profile: StudentProfile | None,

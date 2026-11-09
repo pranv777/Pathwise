@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    false,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.auth.db import Base
@@ -21,6 +30,16 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
+    )
+    # active | suspended | deactivated. Anything but active is refused at login.
+    status: Mapped[str] = mapped_column(
+        String, default="active", server_default="active"
+    )
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     history: Mapped[list[UserHistory]] = relationship(

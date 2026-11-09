@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.admin.tracking import track_agent
 from app.models.llm_outputs import JobMatchOut
 from app.models.schemas import JobListing, JobMatchResponse, StudentProfile
 from app.rag.vector_store import search
@@ -29,6 +30,7 @@ covers a FastAPI requirement) but do not inflate the score past what the evidenc
 """
 
 
+@track_agent("job_matching")
 def run_job_matching_agent(
     profile: StudentProfile, job: JobListing
 ) -> JobMatchResponse:

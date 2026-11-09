@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.admin.tracking import track_agent
 from app.models.llm_outputs import RoadmapOut
 from app.models.schemas import LearningResource, LearningRoadmapResponse
 from app.rag.vector_store import search
@@ -33,6 +34,7 @@ Rules:
 """
 
 
+@track_agent("learning")
 def run_learning_agent(
     missing_skills: list[str], context: str = ""
 ) -> LearningRoadmapResponse:

@@ -5,6 +5,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.admin import models as admin_models  # noqa: F401
 from app.auth import models  # noqa: F401  (registers tables on Base.metadata)
 from app.auth.db import Base
 from app.config import settings
