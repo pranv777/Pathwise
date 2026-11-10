@@ -17,7 +17,6 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import TextContent
 
-
 from app.admin.tracking import track_mcp
 
 

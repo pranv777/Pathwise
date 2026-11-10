@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import asyncio
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.agents.interview_agent import run_interview_evaluate, run_interview_generate
 from app.models.schemas import (
@@ -11,12 +9,14 @@ from app.models.schemas import (
     InterviewGenerateRequest,
     InterviewGenerateResponse,
 )
+from app.rate_limit import limiter
 
 router = APIRouter(prefix="/api/interview", tags=["interview"])
 
 
 @router.post("/generate", response_model=InterviewGenerateResponse)
-async def generate_questions(req: InterviewGenerateRequest):
+@limiter.limit("10/minute")
+async def generate_questions(request: Request, req: InterviewGenerateRequest):
     try:
         return await asyncio.to_thread(
             run_interview_generate, req.role, req.profile, req.num_questions
@@ -28,7 +28,8 @@ async def generate_questions(req: InterviewGenerateRequest):
 
 
 @router.post("/evaluate", response_model=InterviewEvaluateResponse)
-async def evaluate_answer(req: InterviewEvaluateRequest):
+@limiter.limit("40/minute")
+async def evaluate_answer(request: Request, req: InterviewEvaluateRequest):
     try:
         return await asyncio.to_thread(
             run_interview_evaluate, req.question, req.answer, req.role

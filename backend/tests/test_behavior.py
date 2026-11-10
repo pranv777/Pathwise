@@ -1,5 +1,4 @@
 import uuid
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from langchain_chroma import Chroma
@@ -68,25 +67,6 @@ def test_extract_json_handles_llm_noise(raw):
 def test_extract_json_rejects_garbage():
     with pytest.raises(ValueError):
         extract_json("no json here at all")
-
-
-def test_workflow_runs_once_and_saves_history(client, auth_headers, db_session):
-    state = {
-        "job": {"id": "1", "title": "Intern", "company": "Acme", "description": "d"},
-        "steps": [{"agent": "Orchestrator", "action": "x", "detail": ""}],
-    }
-    payload = {
-        "profile": {"skills": ["Python"]},
-        "job_query": "backend intern",
-    }
-    with patch(
-        "app.api.routes_chat.run_full_workflow", new=AsyncMock(return_value=state)
-    ) as mock_run:
-        r = client.post("/api/workflow/run", json=payload, headers=auth_headers)
-
-    assert r.status_code == 200
-    assert mock_run.await_count == 1  # regression test for the double-run bug
-    assert db_session.query(UserHistory).count() == 1
 
 
 def test_upload_too_large_rejected(client, auth_headers):

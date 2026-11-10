@@ -29,6 +29,16 @@ export function AuthProvider({ children }) {
 
   const resendOtp = useCallback((email) => axios.post('/api/auth/resend-otp', { email }, opts), [])
 
+  const forgotPassword = useCallback(
+    (email) => axios.post('/api/auth/forgot-password', { email }, opts),
+    [],
+  )
+  const resetPassword = useCallback(
+    (email, otp, new_password) =>
+      axios.post('/api/auth/reset-password', { email, otp, new_password }, opts),
+    [],
+  )
+
   const verifyOtp = useCallback(async (email, otp) => {
     const res = await axios.post('/api/auth/verify-otp', { email, otp }, opts)
     setUser(res.data.user)
@@ -40,8 +50,18 @@ export function AuthProvider({ children }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, login, register, resendOtp, verifyOtp, logout }),
-    [user, loading, login, register, resendOtp, verifyOtp, logout],
+    () => ({
+      user,
+      loading,
+      login,
+      register,
+      resendOtp,
+      verifyOtp,
+      forgotPassword,
+      resetPassword,
+      logout,
+    }),
+    [user, loading, login, register, resendOtp, verifyOtp, forgotPassword, resetPassword, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

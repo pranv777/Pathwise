@@ -1,23 +1,17 @@
 from unittest.mock import AsyncMock, patch
 
-from app.models.schemas import AgentStep
 
-
-def test_chat_returns_the_reply_and_agent_steps(client, test_user):
-    steps = [
-        AgentStep(agent="Orchestrator", action="Routed to: rag_answer", detail="x")
-    ]
+def test_chat_returns_the_reply(client, test_user):
     with patch(
         "app.api.routes_chat.run_chat_orchestrator",
-        new=AsyncMock(return_value=("hello there", steps)),
+        new=AsyncMock(return_value="hello there"),
     ) as orchestrator:
         r = client.post("/api/chat", json={"message": "hi", "session_id": "abc"})
 
     assert r.status_code == 200
-    body = r.json()
-    assert body["reply"] == "hello there"
-    assert body["steps"][0]["agent"] == "Orchestrator"
+    assert r.json() == {"reply": "hello there"}
 
+    assert orchestrator.await_args is not None
     message, profile, user_id, session_id = orchestrator.await_args.args
     assert message == "hi"
     assert profile is None
@@ -27,14 +21,14 @@ def test_chat_returns_the_reply_and_agent_steps(client, test_user):
 
 def test_chat_passes_the_profile_through(client):
     with patch(
-        "app.api.routes_chat.run_chat_orchestrator",
-        new=AsyncMock(return_value=("ok", [])),
+        "app.api.routes_chat.run_chat_orchestrator", new=AsyncMock(return_value="ok")
     ) as orchestrator:
         client.post(
             "/api/chat",
             json={"message": "hi", "profile": {"name": "Asha", "skills": ["Python"]}},
         )
 
+    assert orchestrator.await_args is not None
     profile = orchestrator.await_args.args[1]
     assert profile.name == "Asha"
     assert profile.skills == ["Python"]

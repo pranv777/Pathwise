@@ -15,8 +15,9 @@ import threading
 from datetime import UTC, datetime, timedelta
 from datetime import date as Date
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
+from chromadb.api.types import IncludeEnum
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -91,11 +92,12 @@ def overview(days: int = Query(14, ge=7, le=90), db: Session = Depends(get_db)):
         .group_by(AgentRun.name)
         .order_by(func.count().desc())
     ).all()
-    pipeline = dict(
-        db.execute(
+    pipeline: dict[str, int] = {
+        s: n
+        for s, n in db.execute(
             select(SavedJob.status, func.count()).group_by(SavedJob.status)
         ).all()
-    )
+    }
 
     return {
         "stats": {
@@ -472,13 +474,14 @@ def _shared_only(**extra) -> dict:
 
 
 @router.get("/kb")
-def kb_list():
+def kb_list() -> dict[str, Any]:
     try:
-        data = _collection().get(where=_shared_only(), include=["metadatas"])
+        data = _collection().get(where=_shared_only(), include=[IncludeEnum.metadatas])
     except Exception as exc:
         raise HTTPException(
             503, f"Vector store unavailable: {type(exc).__name__}"
         ) from exc
+    # ...rest of the function unchanged
     docs: dict[str, dict] = {}
     for m in data.get("metadatas") or []:
         m = m or {}

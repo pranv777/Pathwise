@@ -30,7 +30,7 @@ AI agents, a retrieval (RAG) knowledge base and real MCP tool servers.
 ## How it works
 
 ```
-React (Vite)  ──►  FastAPI  ──►  Agents (LangGraph / LangChain + Groq)
+React (Vite)  ──►  FastAPI  ──►  Agents (LangChain + Groq)
                       │                │
                       │                ├──►  RAG: Chroma vector store (Gemini embeddings)
                       │                └──►  MCP tools: job search, GitHub
@@ -55,7 +55,7 @@ React (Vite)  ──►  FastAPI  ──►  Agents (LangGraph / LangChain + Gro
 | Layer | Tools |
 |---|---|
 | Frontend | React 18, Vite, Tailwind CSS, Vitest, Playwright |
-| Backend | FastAPI, Pydantic, LangGraph, LangChain |
+| Backend | FastAPI, Pydantic, LangChain |
 | AI | Groq `openai/gpt-oss-120b` for the agents (Gemini also supported), Gemini embeddings for RAG |
 | Data | PostgreSQL (SQLite for quick local runs), SQLAlchemy, Alembic, Chroma |
 | Tools | MCP (FastMCP), Tavily web search, GitHub API |

@@ -1,15 +1,15 @@
-from __future__ import annotations
-
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.mcp_tools.mcp_client import MCPToolError, call_github_analysis
 from app.models.schemas import GitHubAnalysisRequest, GitHubAnalysisResponse
+from app.rate_limit import limiter
 
 router = APIRouter(prefix="/api/github", tags=["github"])
 
 
 @router.post("/analyze", response_model=GitHubAnalysisResponse)
-async def analyze_github(req: GitHubAnalysisRequest):
+@limiter.limit("10/minute")
+async def analyze_github(request: Request, req: GitHubAnalysisRequest):
     try:
         result = await call_github_analysis(req.username)
     except MCPToolError as exc:

@@ -51,6 +51,12 @@ class EmailRequest(BaseModel):
     email: EmailStr
 
 
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=8, max_length=72)
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=72)
@@ -145,6 +151,51 @@ def resend_otp(request: Request, req: EmailRequest, db: Session = Depends(get_db
         )
     _issue_otp(db, email, row.name, row.password_hash)
     return {"status": "otp_sent", "email": email}
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password(request: Request, req: EmailRequest, db: Session = Depends(get_db)):
+    """Always answers the same, so this can't be used to find out who has an account."""
+    email = str(req.email).lower()
+    user = db.query(User).filter(User.email == email).first()
+    if user and user.password_hash and user.status == "active":
+        try:
+            # "reset" is a placeholder: EmailOTP.password_hash is NOT NULL, and the
+            # real new password only arrives with the code in /reset-password.
+            _issue_otp(db, email, user.name, "reset")
+        except HTTPException:
+            pass  # cooldown or mail failure: don't let the response differ
+    return {"status": "ok"}
+
+
+@router.post("/reset-password")
+@limiter.limit("10/minute")
+def reset_password(
+    request: Request, req: ResetPasswordRequest, db: Session = Depends(get_db)
+):
+    email = str(req.email).lower()
+    row = db.query(EmailOTP).filter(EmailOTP.email == email).first()
+    user = db.query(User).filter(User.email == email).first()
+    invalid = HTTPException(400, "Invalid or expired code. Please request a new one.")
+    # A pending *signup* row has no account yet, so it can never reset anything.
+    if not row or not user or not user.password_hash:
+        raise invalid
+    if datetime.now(UTC) > _aware(row.expires_at):
+        raise invalid
+    if row.attempts >= OTP_MAX_ATTEMPTS:
+        raise HTTPException(
+            429, "Too many incorrect attempts. Please request a new code."
+        )
+    if not hmac.compare_digest(row.code_hash, hash_otp(email, req.otp)):
+        row.attempts += 1
+        db.commit()
+        raise HTTPException(400, "Incorrect code. Please try again.")
+
+    user.password_hash = hash_password(req.new_password)
+    db.delete(row)
+    db.commit()
+    return {"status": "password_reset"}
 
 
 @router.post("/verify-otp", response_model=LoginResponse)

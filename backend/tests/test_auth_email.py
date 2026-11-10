@@ -100,3 +100,67 @@ def test_short_password_is_rejected(public):
         ).status_code
         == 422
     )
+
+
+def _signup(client, sent):
+    client.post("/api/auth/register", json=SIGNUP)
+    client.post(
+        "/api/auth/verify-otp",
+        json={"email": SIGNUP["email"], "otp": sent["asha@example.com"]},
+    )
+
+
+def test_forgot_password_does_not_reveal_unknown_emails(public):
+    client, sent = public
+    r = client.post("/api/auth/forgot-password", json={"email": "nobody@example.com"})
+    assert r.status_code == 200 and r.json() == {"status": "ok"}
+    assert sent == {}
+
+
+def test_password_reset_flow(public):
+    client, sent = public
+    _signup(client, sent)
+    client.post("/api/auth/forgot-password", json={"email": SIGNUP["email"]})
+    r = client.post(
+        "/api/auth/reset-password",
+        json={
+            "email": SIGNUP["email"],
+            "otp": sent["asha@example.com"],
+            "new_password": "brand-new-pass",
+        },
+    )
+    assert r.status_code == 200
+    old = {"email": SIGNUP["email"], "password": SIGNUP["password"]}
+    new = {"email": SIGNUP["email"], "password": "brand-new-pass"}
+    assert client.post("/api/auth/login", json=old).status_code == 401
+    assert client.post("/api/auth/login", json=new).status_code == 200
+
+
+def test_wrong_reset_code_is_limited(public):
+    client, sent = public
+    _signup(client, sent)
+    client.post("/api/auth/forgot-password", json={"email": SIGNUP["email"]})
+    code = sent["asha@example.com"]
+    bad = {
+        "email": SIGNUP["email"],
+        "otp": "000000" if code != "000000" else "111111",
+        "new_password": "brand-new-pass",
+    }
+    for _ in range(5):
+        assert client.post("/api/auth/reset-password", json=bad).status_code == 400
+    good = {**bad, "otp": code}
+    assert client.post("/api/auth/reset-password", json=good).status_code == 429
+
+
+def test_pending_signup_cannot_be_used_to_reset(public):
+    client, sent = public
+    client.post("/api/auth/register", json=SIGNUP)  # no account yet
+    r = client.post(
+        "/api/auth/reset-password",
+        json={
+            "email": SIGNUP["email"],
+            "otp": sent["asha@example.com"],
+            "new_password": "brand-new-pass",
+        },
+    )
+    assert r.status_code == 400

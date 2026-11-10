@@ -172,30 +172,8 @@ class ChatRequest(BaseModel):
     session_id: str = Field(default="default", max_length=100)
 
 
-class AgentStep(BaseModel):
-    agent: str
-    action: str
-    detail: str = ""
-
-
 class ChatResponse(BaseModel):
     reply: str
-    steps: list[AgentStep]
-
-
-class WorkflowRequest(BaseModel):
-    profile: StudentProfile
-    job_query: str = Field(min_length=1, max_length=200)
-    location: str | None = Field(default=None, max_length=100)
-
-
-class WorkflowResponse(BaseModel):
-    steps: list[AgentStep]
-    job: JobListing | None = None
-    match: JobMatchResponse | None = None
-    skill_gap: SkillGapResponse | None = None
-    roadmap: LearningRoadmapResponse | None = None
-    interview_questions: list[InterviewQuestion] = Field(default_factory=list)
 
 
 class HistorySnapshot(BaseModel):

@@ -59,22 +59,26 @@ def set_route(monkeypatch):
     return _set
 
 
-def chat(message="hello", profile=PROFILE, user_id=1, session_id="s1"):
+def chat(
+    message="hello",
+    profile: StudentProfile | None = PROFILE,
+    user_id=1,
+    session_id="s1",
+):
     return asyncio.run(run_chat_orchestrator(message, profile, user_id, session_id))
 
 
 # ---------------------------------------------------------------- routing
 
 
-def test_router_decision_is_recorded_as_the_first_step(set_route, monkeypatch):
+def test_router_decision_is_logged(set_route, monkeypatch, caplog):
     set_route(route="rag_answer", reasoning="general question")
     monkeypatch.setattr(orchestrator, "_rag_answer", AsyncMock(return_value="ok"))
 
-    _, steps = chat("how do I prepare?")
+    with caplog.at_level("INFO", logger="app.agents.orchestrator"):
+        chat("how do I prepare?")
 
-    assert steps[0].agent == "Orchestrator"
-    assert steps[0].action == "Routed to: rag_answer"
-    assert steps[0].detail == "general question"
+    assert "routed to rag_answer" in caplog.text
 
 
 def test_unknown_route_falls_back_to_rag_answer(set_route, monkeypatch):
@@ -82,10 +86,9 @@ def test_unknown_route_falls_back_to_rag_answer(set_route, monkeypatch):
     rag = AsyncMock(return_value="fallback answer")
     monkeypatch.setattr(orchestrator, "_rag_answer", rag)
 
-    reply, steps = chat("brew something")
+    reply = chat("brew something")
 
     assert reply == "fallback answer"
-    assert steps[0].action == "Routed to: rag_answer"
     rag.assert_awaited_once()
 
 
@@ -94,12 +97,10 @@ def test_rag_answer_route_passes_message_user_and_history(set_route, monkeypatch
     rag = AsyncMock(return_value="general advice")
     monkeypatch.setattr(orchestrator, "_rag_answer", rag)
 
-    reply, steps = chat("how do I prepare?", user_id=7)
+    reply = chat("how do I prepare?", user_id=7)
 
     assert reply == "general advice"
     rag.assert_awaited_once_with("how do I prepare?", 7, [])
-    assert steps[-1].agent == "RAG"
-    assert steps[-1].detail == "rag_answer"
 
 
 # ------------------------------------------------------------ job search
@@ -115,13 +116,10 @@ def test_job_search_route_calls_the_mcp_tool(set_route, monkeypatch):
     )
     monkeypatch.setattr(orchestrator, "call_job_search", search)
 
-    reply, steps = chat("find me python internships")
+    reply = chat("find me python internships")
 
     search.assert_awaited_once_with("python intern", limit=5)
     assert "SWE Intern at Acme (Pune)" in reply
-    assert steps[1].agent == "Job Search (MCP)"
-    assert "local_fallback" in steps[1].detail
-    assert "1 results" in steps[1].detail
 
 
 def test_job_search_falls_back_to_the_raw_message(set_route, monkeypatch):
@@ -142,7 +140,7 @@ def test_job_search_with_no_results(set_route, monkeypatch):
         AsyncMock(return_value={"jobs": [], "tool_used": "local_fallback"}),
     )
 
-    reply, _ = chat("find jobs")
+    reply = chat("find jobs")
 
     assert "couldn't find" in reply
 
@@ -155,11 +153,10 @@ def test_job_search_tool_failure_is_reported(set_route, monkeypatch):
         AsyncMock(side_effect=MCPToolError("server down")),
     )
 
-    reply, steps = chat("find jobs")
+    reply = chat("find jobs")
 
     assert "couldn't reach the job search tool" in reply
     assert "server down" in reply
-    assert steps[-1].action == "Tool call failed"
 
 
 # ---------------------------------------------------------------- GitHub
@@ -172,12 +169,10 @@ def test_github_route_strips_the_username_and_returns_the_summary(
     tool = AsyncMock(return_value={"summary": "Builds backend tools."})
     monkeypatch.setattr(orchestrator, "call_github_analysis", tool)
 
-    reply, steps = chat("analyze github user octocat")
+    reply = chat("analyze github user octocat")
 
     tool.assert_awaited_once_with("octocat")
     assert reply == "Builds backend tools."
-    assert steps[-1].agent == "GitHub Analysis (MCP)"
-    assert steps[-1].detail == "octocat"
 
 
 def test_github_route_asks_when_no_username_was_found(set_route, monkeypatch):
@@ -185,7 +180,7 @@ def test_github_route_asks_when_no_username_was_found(set_route, monkeypatch):
     tool = AsyncMock()
     monkeypatch.setattr(orchestrator, "call_github_analysis", tool)
 
-    reply, _ = chat("analyze my github")
+    reply = chat("analyze my github")
 
     assert "Which GitHub username" in reply
     tool.assert_not_awaited()
@@ -199,7 +194,7 @@ def test_github_route_reports_tool_errors(set_route, monkeypatch):
         AsyncMock(return_value={"error": "user not found"}),
     )
 
-    reply, _ = chat("analyze ghost")
+    reply = chat("analyze ghost")
 
     assert "Couldn't analyze that GitHub profile" in reply
     assert "user not found" in reply
@@ -213,10 +208,9 @@ def test_github_route_reports_unreachable_tool(set_route, monkeypatch):
         AsyncMock(side_effect=MCPToolError("timeout")),
     )
 
-    reply, steps = chat("analyze octocat")
+    reply = chat("analyze octocat")
 
     assert "couldn't reach the GitHub analysis tool" in reply
-    assert steps[-1].action == "Tool call failed"
 
 
 # ------------------------------------------------------------- skill gap
@@ -227,7 +221,7 @@ def test_skill_gap_route_needs_a_resume(set_route, monkeypatch):
     agent = MagicMock()
     monkeypatch.setattr(orchestrator, "run_skill_gap_agent", agent)
 
-    reply, _ = chat("what am I missing?", profile=None)
+    reply = chat("what am I missing?", profile=None)
 
     assert "Upload your resume first" in reply
     agent.assert_not_called()
@@ -249,14 +243,12 @@ def test_skill_gap_route_ranks_the_missing_skills(set_route, monkeypatch):
     )
     monkeypatch.setattr(orchestrator, "run_skill_gap_agent", agent)
 
-    reply, steps = chat("what am I missing for backend intern?")
+    reply = chat("what am I missing for backend intern?")
 
     assert "For **Backend Intern**" in reply
     assert "1. Docker" in reply
     assert "2. SQL" in reply
     assert "Docker comes first." in reply
-    assert steps[-1].agent == "Skill Gap Agent"
-    assert "2 gaps" in steps[-1].detail
 
 
 def test_skill_gap_route_uses_the_message_when_no_role_was_extracted(
@@ -297,13 +289,12 @@ def test_learning_route_builds_a_roadmap_from_the_skills(set_route, monkeypatch)
     )
     monkeypatch.setattr(orchestrator, "run_learning_agent", agent)
 
-    reply, steps = chat("how do I learn docker?")
+    reply = chat("how do I learn docker?")
 
     agent.assert_called_once_with(["Docker"])  # blank skills are dropped
     assert "**1. Docker** (~2w)" in reply
     assert "- Docker docs" in reply
     assert "_Total: ~2 weeks_" in reply
-    assert steps[-1].agent == "Learning Recommendation Agent"
 
 
 def test_learning_route_without_skills_falls_back_to_rag(set_route, monkeypatch):
@@ -311,11 +302,9 @@ def test_learning_route_without_skills_falls_back_to_rag(set_route, monkeypatch)
     rag = AsyncMock(return_value="general learning advice")
     monkeypatch.setattr(orchestrator, "_rag_answer", rag)
 
-    reply, steps = chat("how should I study?")
+    reply = chat("how should I study?")
 
     assert reply == "general learning advice"
-    assert steps[-1].agent == "RAG"
-    assert steps[-1].detail == "learning"
 
 
 # ------------------------------------------------------------- interview
@@ -336,12 +325,11 @@ def test_interview_route_formats_the_questions(set_route, monkeypatch):
     )
     monkeypatch.setattr(orchestrator, "run_interview_generate", agent)
 
-    reply, steps = chat("interview questions for backend intern")
+    reply = chat("interview questions for backend intern")
 
     agent.assert_called_once_with("Backend Intern", PROFILE, 5)
     assert "**1. What is REST?** _(technical)_" in reply
     assert "An architectural style." in reply
-    assert steps[-1].agent == "Interview Agent"
 
 
 def test_interview_route_works_without_a_profile(set_route, monkeypatch):

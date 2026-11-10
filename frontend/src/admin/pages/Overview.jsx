@@ -1,5 +1,6 @@
 import { adminApi } from '../adminApi'
-import { BarList, ErrorNote, Kpi, LineChart, PageHeader, useLoad } from '../ui'
+import { BarList, ErrorNote, Kpi, LineChart, PageHeader } from '../ui'
+import { useLoad } from '../helpers'
 
 export default function Overview() {
   const { data, error, loading } = useLoad(() => adminApi.overview(14))
@@ -12,19 +13,31 @@ export default function Overview() {
       {s && (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Kpi label="Students" value={s.students} hint={`${s.active_students} active in 30d`} />
-            <Kpi label="Resumes parsed" value={s.resumes} />
-            <Kpi label="Active drives" value={s.active_drives} />
-            <Kpi label="Saved jobs" value={s.saved_jobs} />
-            <Kpi label="AI interactions" value={s.ai_interactions} />
+            <Kpi
+              label="Students"
+              value={s.students}
+              hint={`${s.active_students} active in 30d`}
+              tone="good"
+            />
+            <Kpi label="Resumes parsed" value={s.resumes} hint={undefined} tone={undefined} />
+            <Kpi label="Active drives" value={s.active_drives} hint={undefined} tone={undefined} />
+            <Kpi label="Saved jobs" value={s.saved_jobs} hint="Across all students" tone="good" />
+            <Kpi
+              label="AI interactions"
+              value={s.ai_interactions}
+              hint={undefined}
+              tone={undefined}
+            />
             <Kpi
               label="Agent success rate"
               value={s.agent_success_rate == null ? '—' : `${s.agent_success_rate}%`}
+              hint={undefined}
               tone={s.agent_success_rate != null && s.agent_success_rate < 90 ? 'bad' : 'good'}
             />
             <Kpi
               label="Agent failures"
               value={s.agent_failures}
+              hint={undefined}
               tone={s.agent_failures ? 'bad' : undefined}
             />
           </div>

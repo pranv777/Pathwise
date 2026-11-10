@@ -1,181 +1,36 @@
 """Orchestrator Agent.
 
-Two responsibilities:
-
-1. `build_workflow_graph()` — a LangGraph StateGraph wiring the full
-   pipeline: search jobs (MCP tool) -> job matching -> skill gap ->
-   learning roadmap -> interview prep. Used by the "run full workflow"
-   endpoint.
-
-2. `run_chat_orchestrator()` — for the free-form chat endpoint. The
-   orchestrator LLM reasons about which single agent/tool best answers
-   the user's message (job search via MCP, GitHub analysis via MCP,
-   skill gap, learning roadmap, interview prep, or a plain RAG-grounded
-   answer) and dispatches to it. This is what makes routing genuinely
-   agentic rather than a fixed if/else over keywords.
+`run_chat_orchestrator()` serves the free-form chat endpoint. The orchestrator
+LLM reasons about which single agent/tool best answers the user's message (job
+search via MCP, GitHub analysis via MCP, skill gap, learning roadmap, interview
+prep, or a plain RAG-grounded answer) and dispatches to it. This is what makes
+routing genuinely agentic rather than a fixed if/else over keywords.
 """
 
 from __future__ import annotations
-from typing import cast
 
 import asyncio
 import json
+import logging
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langgraph.graph import END, StateGraph
 
 from app.admin.tracking import track_agent
 from app.agents.interview_agent import run_interview_generate
-from app.agents.job_matching_agent import run_job_matching_agent
 from app.agents.learning_agent import run_learning_agent
 from app.agents.memory import add_turn, get_messages
 from app.agents.skill_gap_agent import run_skill_gap_agent
-from app.agents.state import WorkflowState, log_step
 from app.mcp_tools.mcp_client import MCPToolError, call_github_analysis, call_job_search
 from app.models.llm_outputs import RouteOut
-from app.models.schemas import AgentStep, JobListing, StudentProfile
+from app.models.schemas import JobListing, StudentProfile
 from app.rag.vector_store import search
 from app.utils.llm import get_llm, response_text
 from app.utils.structured import invoke_json
 
-# ---------------------------------------------------------------------------
-# 1. Full-pipeline LangGraph workflow
-# ---------------------------------------------------------------------------
-
-
-async def _node_search_jobs(state: WorkflowState) -> WorkflowState:
-    try:
-        result = await call_job_search(
-            state.get("job_query", ""), state.get("location", ""), limit=1
-        )
-    except MCPToolError as exc:
-        log_step(state, "Orchestrator", "MCP tool call: search_jobs failed", str(exc))
-        return state
-
-    jobs = result.get("jobs", [])
-    if jobs:
-        state["job"] = jobs[0]
-        log_step(
-            state,
-            "Orchestrator",
-            "MCP tool call: search_jobs",
-            f"Found '{jobs[0]['title']}' at {jobs[0]['company']} via {result.get('tool_used')}",
-        )
-    else:
-        log_step(state, "Orchestrator", "MCP tool call: search_jobs", "No jobs found")
-    return state
-
-
-def _node_match(state: WorkflowState) -> WorkflowState:
-    if not state.get("job"):
-        return state
-    profile = StudentProfile(**state.get("profile", {}))
-    job = JobListing(**state.get("job", {}))
-    match = run_job_matching_agent(profile, job)
-    state["match"] = match.model_dump()
-    log_step(
-        state,
-        "Job Matching Agent",
-        "Scored resume against job description",
-        f"Match score: {match.match_score}/100",
-    )
-    return state
-
-
-def _node_skill_gap(state: WorkflowState) -> WorkflowState:
-    if not state.get("job"):
-        return state
-    profile = StudentProfile(**state.get("profile", {}))
-    job = JobListing(**state.get("job", {}))
-    gap = run_skill_gap_agent(profile, job)
-    state["skill_gap"] = gap.model_dump()
-    log_step(
-        state,
-        "Skill Gap Agent",
-        "Identified missing skills",
-        f"{len(gap.missing_skills)} gaps found: {', '.join(gap.missing_skills[:5])}",
-    )
-    return state
-
-
-def _node_learning(state: WorkflowState) -> WorkflowState:
-    missing = state.get("skill_gap", {}).get("priority_order", [])
-    if not missing:
-        return state
-    roadmap = run_learning_agent(missing)
-    state["roadmap"] = roadmap.model_dump()
-    log_step(
-        state,
-        "Learning Recommendation Agent",
-        "Built learning roadmap (RAG-grounded)",
-        f"{len(roadmap.roadmap)} skills, ~{roadmap.total_estimated_weeks} weeks total",
-    )
-    return state
-
-
-def _node_interview(state: WorkflowState) -> WorkflowState:
-    if not state.get("job"):
-        return state
-    profile = StudentProfile(**state.get("profile", {}))
-    job = JobListing(**state.get("job", {}))
-    result = run_interview_generate(job.title, profile, num_questions=5)
-    state["interview_questions"] = [q.model_dump() for q in result.questions]
-    log_step(
-        state,
-        "Interview Agent",
-        "Generated role-specific questions (RAG-grounded)",
-        f"{len(result.questions)} questions for '{job.title}'",
-    )
-    return state
-
-
-_workflow_graph = None
-
-
-def build_workflow_graph():
-    global _workflow_graph
-    if _workflow_graph is not None:
-        return _workflow_graph
-
-    graph = StateGraph(WorkflowState)
-
-    # Node IDs must not duplicate keys in WorkflowState.
-    graph.add_node("search_jobs", _node_search_jobs)
-    graph.add_node("run_matching", _node_match)
-    graph.add_node("analyze_skill_gaps", _node_skill_gap)
-    graph.add_node("build_learning_roadmap", _node_learning)
-    graph.add_node("generate_interview_questions", _node_interview)
-
-    graph.set_entry_point("search_jobs")
-    graph.add_edge("search_jobs", "run_matching")
-    graph.add_edge("run_matching", "analyze_skill_gaps")
-    graph.add_edge("analyze_skill_gaps", "build_learning_roadmap")
-    graph.add_edge("build_learning_roadmap", "generate_interview_questions")
-    graph.add_edge("generate_interview_questions", END)
-
-    _workflow_graph = graph.compile()
-    return _workflow_graph
-
-
-@track_agent("orchestrator")
-async def run_full_workflow(
-    profile: StudentProfile, job_query: str, location: str = ""
-) -> WorkflowState:
-    app_graph = build_workflow_graph()
-    initial_state: WorkflowState = {
-        "profile": profile.model_dump(),
-        "job_query": job_query,
-        "location": location,
-        "steps": [],
-    }
-    log_step(
-        initial_state, "Orchestrator", "Starting full workflow", f"Query: {job_query!r}"
-    )
-    return cast(WorkflowState, await app_graph.ainvoke(initial_state))
-
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# 2. Chat orchestrator — intent routing over agents/tools
+# Chat orchestrator — intent routing over agents/tools
 # ---------------------------------------------------------------------------
 VALID_ROUTES = {
     "job_search",
@@ -253,8 +108,7 @@ async def _route_and_run(
     profile: StudentProfile | None,
     user_id: int,
     history: list[BaseMessage],
-) -> tuple[str, list[AgentStep]]:
-    steps: list[AgentStep] = []
+) -> str:
     router_messages = [
         SystemMessage(content=ROUTER_SYSTEM_PROMPT),
         *history,
@@ -262,129 +116,67 @@ async def _route_and_run(
     ]
     routed = await asyncio.to_thread(invoke_json, RouteOut, router_messages, 0.1)
     route = routed.route if routed.route in VALID_ROUTES else "rag_answer"
-
-    steps.append(
-        AgentStep(
-            agent="Orchestrator",
-            action=f"Routed to: {route}",
-            detail=routed.reasoning,
-        )
-    )
+    logger.info("Orchestrator routed to %s", route)
 
     if route == "job_search":
         try:
             result = await call_job_search(routed.job_query or message, limit=5)
         except MCPToolError as exc:
-            steps.append(
-                AgentStep(
-                    agent="Job Search (MCP)", action="Tool call failed", detail=str(exc)
-                )
-            )
-            return f"I couldn't reach the job search tool right now: {exc}", steps
+            return f"I couldn't reach the job search tool right now: {exc}"
         jobs = result.get("jobs", [])
-        steps.append(
-            AgentStep(
-                agent="Job Search (MCP)",
-                action="Called search_jobs tool",
-                detail=f"tool_used={result.get('tool_used')}, {len(jobs)} results",
-            )
-        )
         if not jobs:
-            return "I couldn't find matching openings right now.", steps
+            return "I couldn't find matching openings right now."
         listing = "\n".join(
             f"- {j['title']} at {j['company']} ({j.get('location', '')})" for j in jobs
         )
-        return f"Here are openings matching your query:\n\n{listing}", steps
+        return f"Here are openings matching your query:\n\n{listing}"
 
     if route == "github_analysis":
         username = routed.github_username.strip()
         if not username:
-            return "Which GitHub username should I analyze?", steps
+            return "Which GitHub username should I analyze?"
         try:
             result = await call_github_analysis(username)  # called exactly once
         except MCPToolError as exc:
-            steps.append(
-                AgentStep(
-                    agent="GitHub Analysis (MCP)",
-                    action="Tool call failed",
-                    detail=str(exc),
-                )
-            )
-            return f"I couldn't reach the GitHub analysis tool right now: {exc}", steps
-        steps.append(
-            AgentStep(
-                agent="GitHub Analysis (MCP)",
-                action="Called analyze_github_profile tool",
-                detail=username,
-            )
-        )
+            return f"I couldn't reach the GitHub analysis tool right now: {exc}"
         if "error" in result:
-            return f"Couldn't analyze that GitHub profile: {result['error']}", steps
-        return result.get("summary", json.dumps(result)), steps
+            return f"Couldn't analyze that GitHub profile: {result['error']}"
+        return result.get("summary", json.dumps(result))
 
     if route == "skill_gap":
         if not profile:
-            return (
-                "Upload your resume first so I can compare your skills to the role.",
-                steps,
-            )
+            return "Upload your resume first so I can compare your skills to the role."
         role = routed.role or message
         job = await _role_as_job(role)
         gap = await asyncio.to_thread(run_skill_gap_agent, profile, job)
-        steps.append(
-            AgentStep(
-                agent="Skill Gap Agent",
-                action="Identified missing skills",
-                detail=f"{len(gap.missing_skills)} gaps for '{role}'",
-            )
-        )
         ranked = "\n".join(f"{i}. {s}" for i, s in enumerate(gap.priority_order, 1))
-        return (
-            f"For **{role}**, here are your gaps in priority order:\n\n{ranked}\n\n{gap.explanation}",
-            steps,
-        )
+        return f"For **{role}**, here are your gaps in priority order:\n\n{ranked}\n\n{gap.explanation}"
 
     if route == "learning":
         skills = [s for s in routed.skills if isinstance(s, str) and s]
         if skills:
             roadmap = await asyncio.to_thread(run_learning_agent, skills)
-            steps.append(
-                AgentStep(
-                    agent="Learning Recommendation Agent",
-                    action="Built learning roadmap (RAG-grounded)",
-                    detail=f"{len(roadmap.roadmap)} skills, ~{roadmap.total_estimated_weeks} weeks",
-                )
-            )
             lines = [
                 f"**{i}. {item.skill}** (~{item.estimated_weeks}w)\n"
                 + "\n".join(f"   - {r}" for r in item.resources)
                 for i, item in enumerate(roadmap.roadmap, 1)
             ]
-            return "\n\n".join(
-                lines
-            ) + f"\n\n_Total: ~{roadmap.total_estimated_weeks} weeks_", steps
+            return (
+                "\n\n".join(lines)
+                + f"\n\n_Total: ~{roadmap.total_estimated_weeks} weeks_"
+            )
 
     if route == "interview":
         role = routed.role or message
         interview = await asyncio.to_thread(run_interview_generate, role, profile, 5)
-        steps.append(
-            AgentStep(
-                agent="Interview Agent",
-                action="Generated role-specific questions (RAG-grounded)",
-                detail=f"{len(interview.questions)} questions for '{role}'",
-            )
-        )
         blocks = [
             f"**{i}. {q.question}** _({q.category})_\n\n{q.answer}"
             for i, q in enumerate(interview.questions, 1)
         ]
-        return "\n\n---\n\n".join(blocks), steps
+        return "\n\n---\n\n".join(blocks)
 
     # rag_answer, plus learning-without-skills fallback
-    steps.append(
-        AgentStep(agent="RAG", action="Retrieved knowledge-base context", detail=route)
-    )
-    return await _rag_answer(message, user_id, history), steps
+    return await _rag_answer(message, user_id, history)
 
 
 @track_agent("orchestrator")
@@ -393,8 +185,8 @@ async def run_chat_orchestrator(
     profile: StudentProfile | None,
     user_id: int,
     session_id: str = "default",
-) -> tuple[str, list[AgentStep]]:
+) -> str:
     history = get_messages(user_id, session_id)
-    reply, steps = await _route_and_run(message, profile, user_id, history)
+    reply = await _route_and_run(message, profile, user_id, history)
     add_turn(user_id, session_id, message, reply)
-    return reply, steps
+    return reply

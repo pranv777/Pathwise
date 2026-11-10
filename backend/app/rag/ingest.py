@@ -41,4 +41,3 @@ def seed_if_empty() -> dict:
 
 if __name__ == "__main__":
     result = ingest_seed_kb()
-    print(f"Seeded knowledge base: {result}")

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Loader2, Send, Target, ListChecks, BookOpen, MessageSquare, Sparkles } from 'lucide-react'
 import ResumeUpload from './ResumeUpload.jsx'
 import { friendlyError } from '../utils/errors.js'
+import { useAuth } from '../context/useAuth.js'
 import DeleteDataButton from './DeleteDataButton.jsx'
+import DeleteAccountButton from './DeleteAccountButton.jsx'
 import StatCard from './StatCard.jsx'
 import GitHubCard from './GitHubCard.jsx'
 import ReactMarkdown from 'react-markdown'
@@ -22,6 +24,7 @@ export default function Overview({
   onChat,
   onNavigate,
 }) {
+  const { logout } = useAuth()
   const [chatInput, setChatInput] = useState('')
   const [chatLog, setChatLog] = useState([])
   const [chatLoading, setChatLoading] = useState(false)
@@ -156,8 +159,9 @@ export default function Overview({
         </div>
       </div>
 
-      <div className="pt-6 border-t border-hairline">
+      <div className="pt-6 border-t border-hairline flex flex-wrap items-start gap-6">
         <DeleteDataButton onDelete={onDeleteData} />
+        <DeleteAccountButton onDeleted={logout} />
       </div>
     </div>
   )

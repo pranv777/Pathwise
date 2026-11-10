@@ -1,9 +1,8 @@
-from __future__ import annotations
-
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.mcp_tools.mcp_client import MCPToolError, call_job_search
 from app.models.schemas import JobListing, JobSearchRequest, JobSearchResponse
+from app.rate_limit import limiter
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
@@ -22,7 +21,8 @@ def _matches_type(job: JobListing, job_type: str) -> bool:
 
 
 @router.post("/search", response_model=JobSearchResponse)
-async def search_jobs(req: JobSearchRequest):
+@limiter.limit("20/minute")
+async def search_jobs(request: Request, req: JobSearchRequest):
     hint = _TYPE_HINT.get(req.job_type, "")
     query = f"{req.query} {hint}".strip()
     try:
