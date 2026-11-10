@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { adminApi, errMsg } from '../adminApi'
-import { ErrorNote, PageHeader, Pill, Table, fmtDate, useLoad } from '../ui'
+import { ErrorNote, PageHeader, Pill, Table } from '../ui'
+import { fmtDate, useLoad } from '../helpers'
 
 export default function Students() {
   const [q, setQ] = useState('')

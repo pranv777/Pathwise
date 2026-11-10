@@ -19,8 +19,8 @@ function Field({ label, ...props }) {
 }
 
 export default function LoginPage() {
-  const { login, register, resendOtp, verifyOtp } = useAuth()
-  const [mode, setMode] = useState('login') // 'login' | 'signup' | 'verify'
+  const { login, register, resendOtp, verifyOtp, forgotPassword, resetPassword } = useAuth()
+  const [mode, setMode] = useState('login') // 'login' | 'signup' | 'verify' | 'forgot' | 'reset'
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
@@ -89,6 +89,38 @@ export default function LoginPage() {
       setInfo('A new code has been sent.')
     }, 'Could not resend the code.')
 
+  const submitForgot = (e) => {
+    e.preventDefault()
+    if (!EMAIL_RE.test(form.email.trim())) return setError('Enter a valid email address.')
+    run(async () => {
+      await forgotPassword(form.email.trim())
+      setOtp('')
+      setCooldown(RESEND_SECONDS)
+      setMode('reset')
+      setInfo('If an account exists for this email, we sent a 6-digit code.')
+    }, 'Could not send the code.')
+  }
+
+  const submitReset = (e) => {
+    e.preventDefault()
+    if (!/^\d{6}$/.test(otp)) return setError('Enter the 6-digit code from your email.')
+    if (form.password.length < 8) return setError('Password must be at least 8 characters.')
+    if (form.password !== form.confirm) return setError('Passwords do not match.')
+    run(async () => {
+      await resetPassword(form.email.trim(), otp, form.password)
+      setForm((f) => ({ ...f, password: '', confirm: '' }))
+      setMode('login')
+      setInfo('Password updated. Sign in with your new password.')
+    }, 'Could not reset your password.')
+  }
+
+  const resendReset = () =>
+    run(async () => {
+      await forgotPassword(form.email.trim())
+      setCooldown(RESEND_SECONDS)
+      setInfo('If an account exists for this email, we sent a new code.')
+    }, 'Could not resend the code.')
+
   const submitButton = (label) => (
     <button type="submit" className="btn-primary w-full justify-center" disabled={busy}>
       {busy && <Loader2 size={16} className="animate-spin" />}
@@ -112,6 +144,8 @@ export default function LoginPage() {
               {mode === 'login' && 'Sign in to continue to your placement dashboard.'}
               {mode === 'signup' && 'Create your account.'}
               {mode === 'verify' && 'Verify your email.'}
+              {mode === 'forgot' && 'Enter your email and we will send a reset code.'}
+              {mode === 'reset' && 'Choose a new password.'}
             </p>
           </div>
         </div>
@@ -134,6 +168,13 @@ export default function LoginPage() {
               onChange={set('password')}
             />
             {submitButton('Sign in')}
+            <button
+              type="button"
+              onClick={() => switchMode('forgot')}
+              className="text-xs text-cobalt-dark"
+            >
+              Forgot password?
+            </button>
           </form>
         )}
 
@@ -205,6 +246,58 @@ export default function LoginPage() {
           </form>
         )}
 
+        {mode === 'forgot' && (
+          <form onSubmit={submitForgot} className="space-y-3" noValidate>
+            <Field
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={set('email')}
+            />
+            {submitButton('Send reset code')}
+          </form>
+        )}
+
+        {mode === 'reset' && (
+          <form onSubmit={submitReset} className="space-y-3" noValidate>
+            <Field
+              label="Reset code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+            />
+            <Field
+              label="New password (8+ characters)"
+              type="password"
+              autoComplete="new-password"
+              maxLength={72}
+              value={form.password}
+              onChange={set('password')}
+            />
+            <Field
+              label="Confirm new password"
+              type="password"
+              autoComplete="new-password"
+              maxLength={72}
+              value={form.confirm}
+              onChange={set('confirm')}
+            />
+            {submitButton('Reset password')}
+            <button
+              type="button"
+              onClick={resendReset}
+              disabled={busy || cooldown > 0}
+              className="text-xs text-cobalt-dark disabled:text-muted"
+            >
+              {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+            </button>
+          </form>
+        )}
+
         {error && (
           <p role="alert" className="text-sm text-signal-red">
             {error}
@@ -212,7 +305,7 @@ export default function LoginPage() {
         )}
         {info && <p className="text-sm text-signal-green">{info}</p>}
 
-        {mode !== 'verify' && (
+        {(mode === 'login' || mode === 'signup') && (
           <p className="text-sm text-muted">
             {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
             <button
@@ -223,6 +316,15 @@ export default function LoginPage() {
               {mode === 'login' ? 'Create one' : 'Sign in'}
             </button>
           </p>
+        )}
+        {(mode === 'forgot' || mode === 'reset') && (
+          <button
+            type="button"
+            onClick={() => switchMode('login')}
+            className="text-sm text-cobalt-dark font-medium"
+          >
+            Back to sign in
+          </button>
         )}
       </div>
     </div>

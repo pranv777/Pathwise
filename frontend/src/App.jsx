@@ -81,6 +81,8 @@ function Dashboard({ user, onLogout }) {
   const [skillGap, setSkillGap] = useState(null)
   const [roadmap, setRoadmap] = useState(null)
   const [interviewQuestions, setInterviewQuestions] = useState([])
+  const [interviewAnswers, setInterviewAnswers] = useState([])
+  const [interviewResults, setInterviewResults] = useState([])
   const [error, setError] = useState('')
 
   const [resumeLoading, setResumeLoading] = useState(false)
@@ -133,7 +135,7 @@ function Dashboard({ user, onLogout }) {
     setMatch(null)
     setSkillGap(null)
     setRoadmap(null)
-    setInterviewQuestions([])
+    loadInterviewQuestions([])
     setError('')
     setActiveTab('overview')
     setSavedJobs([])
@@ -202,7 +204,7 @@ function Dashboard({ user, onLogout }) {
     setMatch(p.match || null)
     setSkillGap(p.skill_gap || null)
     setRoadmap(p.roadmap || null)
-    setInterviewQuestions(p.interview_questions || [])
+    loadInterviewQuestions(p.interview_questions || [])
     setActiveTab('match')
   }
 
@@ -259,7 +261,7 @@ function Dashboard({ user, onLogout }) {
     setInterviewLoading(true)
     try {
       const res = await api.generateInterview(role, profile)
-      setInterviewQuestions(res.data.questions)
+      loadInterviewQuestions(res.data.questions)
       // Only attach questions to the saved job if they were generated for that role.
       if (selectedJob && role.trim().toLowerCase() === selectedJob.title.toLowerCase()) {
         saveSnapshot(selectedJob, {
@@ -274,6 +276,13 @@ function Dashboard({ user, onLogout }) {
     } finally {
       setInterviewLoading(false)
     }
+  }
+
+  // New question set => start the answer sheet and scores from scratch.
+  const loadInterviewQuestions = (questions) => {
+    setInterviewQuestions(questions)
+    setInterviewAnswers([])
+    setInterviewResults([])
   }
 
   const handleChat = async (message) => {
@@ -366,6 +375,10 @@ function Dashboard({ user, onLogout }) {
               loading={interviewLoading}
               onGenerate={generateInterview}
               defaultRole={selectedJob?.title}
+              answers={interviewAnswers}
+              setAnswers={setInterviewAnswers}
+              results={interviewResults}
+              setResults={setInterviewResults}
             />
           )}
 

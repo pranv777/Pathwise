@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { adminApi, errMsg } from '../adminApi'
-import { ErrorNote, Kpi, PageHeader, Table, useLoad } from '../ui'
+import { ErrorNote, Kpi, PageHeader, Table } from '../ui'
+import { useLoad } from '../helpers'
 
 const TYPES = [
   ['career_guide', 'Career guide'],

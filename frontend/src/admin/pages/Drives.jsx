@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { adminApi, errMsg } from '../adminApi'
-import { ErrorNote, PageHeader, Pill, Table, useLoad } from '../ui'
+import { ErrorNote, PageHeader, Pill, Table } from '../ui'
+import { useLoad } from '../helpers'
 
 const blank = {
   company: '',
@@ -84,6 +85,7 @@ export default function Drives() {
         <Table
           rows={data}
           empty="No drives yet."
+          onRow={() => {}}
           cols={[
             { key: 'company', label: 'Company', render: (r) => <>{r.company}</> },
             { key: 'role', label: 'Role' },
@@ -125,7 +127,7 @@ export default function Drives() {
             </label>
             <label className="block text-sm">
               Role
-              <input className={input} value={form.role} onChange={set('role')} />
+              <input required className={input} value={form.role} onChange={set('role')} />
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm">

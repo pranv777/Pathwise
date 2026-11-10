@@ -57,6 +57,7 @@ export const api = {
   getProfile: () => client.get('/profile'),
   saveProfile: (/** @type {any} */ profile) => client.put('/profile', profile),
   deleteMyData: () => client.delete('/me/data'),
+  deleteAccount: (/** @type {string} */ password) => client.delete('/me', { data: { password } }),
 
   uploadResume: (/** @type {string | Blob} */ file) => {
     const form = new FormData()
@@ -96,6 +97,12 @@ export const api = {
 
   generateInterview: (/** @type {any} */ role, /** @type {any} */ profile, num_questions = 5) =>
     client.post('/interview/generate', { role, profile, num_questions }),
+
+  evaluateAnswer: (
+    /** @type {string} */ question,
+    /** @type {string} */ answer,
+    /** @type {string} */ role = '',
+  ) => client.post('/interview/evaluate', { question, answer, role }),
 
   chat: (/** @type {any} */ message, /** @type {any} */ profile, session_id = 'default') =>
     client.post('/chat', { message, profile, session_id }),

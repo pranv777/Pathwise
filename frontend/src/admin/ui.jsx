@@ -1,24 +1,6 @@
-import { useEffect, useState } from 'react'
 import { friendlyError } from '../utils/errors.js'
 
-/** Load data once and expose reload. Keeps pages free of boilerplate. */
-export function useLoad(fn, deps = []) {
-  const [state, set] = useState({ data: null, error: null, loading: true })
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    let alive = true
-    set((s) => ({ ...s, loading: true }))
-    fn()
-      .then((data) => alive && set({ data, error: null, loading: false }))
-      .catch((e) => alive && set({ data: null, error: e, loading: false }))
-    return () => {
-      alive = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, tick])
-  return { ...state, reload: () => setTick((t) => t + 1) }
-}
-
+/** @param {{ title: string, sub?: string, children?: import('react').ReactNode }} props */
 export function PageHeader({ title, sub, children }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -32,6 +14,7 @@ export function PageHeader({ title, sub, children }) {
   )
 }
 
+/** @param {{ label: string, value?: any, hint?: string, tone?: string }} props */
 export function Kpi({ label, value, hint, tone }) {
   const color = tone === 'bad' ? 'text-red-700' : tone === 'good' ? 'text-green-700' : 'text-ink'
   return (
@@ -61,9 +44,7 @@ export const Pill = ({ value }) => (
   </span>
 )
 
-export const fmtDate = (v) => (v ? new Date(v).toLocaleString() : '—')
-
-export function Empty({ children = 'Nothing here yet.' }) {
+function Empty({ children = 'Nothing here yet.' }) {
   return <div className="p-8 text-center text-sm text-muted">{children}</div>
 }
 
@@ -127,6 +108,7 @@ export function BarList({ data }) {
   )
 }
 
+/** @param {{ cols: any[], rows?: any[], empty?: string, onRow?: (row: any) => void }} props */
 export function Table({ cols, rows, empty, onRow }) {
   if (!rows?.length) return <Empty>{empty}</Empty>
   return (
